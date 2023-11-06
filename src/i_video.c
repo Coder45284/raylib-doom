@@ -59,11 +59,19 @@ void I_StartFrame()
         }
     }
 
+    double length = (double)GetScreenHeight() / (double)SCREENHEIGHT;
+    Vector2 position = {0, 0};
+
+    if( length * SCREENWIDTH > GetScreenWidth() )
+        length = (double)GetScreenWidth() / (double)SCREENWIDTH;
+
     Texture2D display_texture = LoadTextureFromImage(display_image);
 
     BeginDrawing();
 
-    DrawTexture(display_texture, 0, 0, WHITE);
+    ClearBackground(BLACK);
+
+    DrawTextureEx(display_texture, position, 0.0f, length, WHITE);
 
     EndDrawing();
 
@@ -118,4 +126,7 @@ void I_InitGraphics()
     display_image = GenImageColor(SCREENWIDTH, SCREENHEIGHT, PURPLE);
 
     InitWindow(SCREENWIDTH, SCREENHEIGHT, "raylib doom");
+
+    SetWindowState( FLAG_WINDOW_RESIZABLE );
+    SetWindowMinSize(2 * SCREENWIDTH, 2 * SCREENHEIGHT);
 }
