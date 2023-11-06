@@ -36,6 +36,8 @@
 
 #include "doomdef.h"
 
+#define PALETTE_AMOUNT 0x100
+static Color image_palette[PALETTE_AMOUNT];
 static Image display_image;
 static Texture2D display_texture;
 
@@ -51,13 +53,9 @@ void I_ShutdownGraphics()
 //
 void I_StartFrame()
 {
-    Color color = BLACK;
-
     for( d_int x = 0; x < SCREENHEIGHT; x++ ) {
         for( d_int y = 0; y < SCREENWIDTH; y++ ) {
-            color.r = color.g = color.b = screens[0][ x * SCREENWIDTH + y ];
-
-            ImageDrawPixel(&display_image, y, x, color);
+            ImageDrawPixel(&display_image, y, x, image_palette[screens[0][ x * SCREENWIDTH + y ]]);
         }
     }
 
@@ -172,6 +170,11 @@ void I_ReadScreen(byte* scr)
 //
 void I_SetPalette(byte* palette)
 {
+    byte* current_palette_color;
+
+    for( d_short p = 0; p < PALETTE_AMOUNT; p++ ) {
+        current_palette_color = &palette[ 3 * p ];
+    }
 }
 
 void I_InitGraphics()
@@ -204,4 +207,11 @@ void I_InitGraphics()
 
     display_image = GenImageColor(SCREENWIDTH, SCREENHEIGHT, PURPLE);
     display_texture = LoadTextureFromImage(display_image);
+
+    for( Color *p = image_palette; p < image_palette + PALETTE_AMOUNT; p++ ) {
+        p->r = 0xFF;
+        p->g = (p - image_palette);
+        p->b = 0xFF;
+        p->a = 0xFF;
+    }
 }
