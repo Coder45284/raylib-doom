@@ -37,10 +37,12 @@
 #include "doomdef.h"
 
 static Image display_image;
+static Texture2D display_texture;
 
 void I_ShutdownGraphics()
 {
-    UnloadImage( display_image );
+    UnloadImage(display_image);
+    UnloadTexture(display_texture);
     CloseWindow();
 }
 
@@ -68,7 +70,7 @@ void I_StartFrame()
         position.y = (GetScreenHeight() - span * SCREENHEIGHT) / 2;
     }
 
-    Texture2D display_texture = LoadTextureFromImage(display_image);
+    UpdateTexture(display_texture, display_image.data);
 
     BeginDrawing();
 
@@ -77,8 +79,6 @@ void I_StartFrame()
     DrawTextureEx(display_texture, position, 0.0f, span, WHITE);
 
     EndDrawing();
-
-    UnloadTexture(display_texture);
 
 }
 
@@ -126,13 +126,30 @@ void I_SetPalette(byte* palette)
 
 void I_InitGraphics()
 {
-    display_image = GenImageColor(SCREENWIDTH, SCREENHEIGHT, PURPLE);
-
     int screen_width = SCREENWIDTH;
     int screen_height = SCREENHEIGHT;
 
-    InitWindow(SCREENWIDTH, SCREENHEIGHT, "raylib doom");
+    InitWindow(screen_width, screen_height, "raylib doom");
 
-    SetWindowState( FLAG_WINDOW_RESIZABLE );
+    if( GetMonitorCount() != 0 ) {
+        const int current_monitor = GetCurrentMonitor();
+        const int monitor_width   = GetMonitorWidth(  current_monitor );
+        const int monitor_height  = GetMonitorHeight( current_monitor );
+
+        while( monitor_width > 2 * screen_width && monitor_height > 2 * screen_height ) {
+            screen_width  *= 2;
+            screen_height *= 2;
+        }
+
+        SetWindowSize( screen_width, screen_height );
+        SetWindowPosition(
+            (monitor_width  - screen_width)  / 2,
+            (monitor_height - screen_height) / 2 );
+    }
+
+    SetWindowState(FLAG_WINDOW_RESIZABLE);
     SetWindowMinSize(SCREENWIDTH, SCREENHEIGHT);
+
+    display_image = GenImageColor(SCREENWIDTH, SCREENHEIGHT, PURPLE);
+    display_texture = LoadTextureFromImage(display_image);
 }
