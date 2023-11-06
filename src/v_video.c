@@ -23,11 +23,6 @@
 //
 //-----------------------------------------------------------------------------
 
-
-static const char
-rcsid[] = "$Id: v_video.c,v 1.5 1997/02/03 22:45:13 b1 Exp $";
-
-
 #include "i_system.h"
 #include "r_local.h"
 
@@ -467,9 +462,9 @@ V_GetBlock
 
     while (height--) 
     { 
-	memcpy (dest, src, width); 
-	src += SCREENWIDTH; 
-	dest += width; 
+        memcpy (dest, src, width);
+        src += SCREENWIDTH;
+        dest += width;
     } 
 } 
 
@@ -489,5 +484,5 @@ void V_Init (void)
     base = I_AllocLow (SCREENWIDTH*SCREENHEIGHT*4);
 
     for (i=0 ; i<4 ; i++)
-	screens[i] = base + i*SCREENWIDTH*SCREENHEIGHT;
+        screens[i] = base + i*SCREENWIDTH*SCREENHEIGHT;
 }

@@ -22,7 +22,8 @@
 //-----------------------------------------------------------------------------
 
 #include "doomtype.h"
-static const d_char rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
+
+#include "raylib.h"
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -35,8 +36,12 @@ static const d_char rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include "doomdef.h"
 
+static Image display_image;
+
 void I_ShutdownGraphics()
 {
+    UnloadImage( display_image );
+    CloseWindow();
 }
 
 //
@@ -44,7 +49,25 @@ void I_ShutdownGraphics()
 //
 void I_StartFrame()
 {
-    // er?
+    Color color = BLACK;
+
+    for( d_int x = 0; x < SCREENHEIGHT; x++ ) {
+        for( d_int y = 0; y < SCREENWIDTH; y++ ) {
+            color.r = color.g = color.b = screens[0][ x * SCREENWIDTH + y ];
+
+            ImageDrawPixel(&display_image, y, x, color);
+        }
+    }
+
+    Texture2D display_texture = LoadTextureFromImage(display_image);
+
+    BeginDrawing();
+
+    DrawTexture(display_texture, 0, 0, WHITE);
+
+    EndDrawing();
+
+    UnloadTexture(display_texture);
 
 }
 
@@ -80,6 +103,7 @@ void I_FinishUpdate()
 //
 void I_ReadScreen(byte* scr)
 {
+    memcpy (scr, screens[0], SCREENWIDTH * SCREENHEIGHT);
 }
 
 //
@@ -91,4 +115,7 @@ void I_SetPalette(byte* palette)
 
 void I_InitGraphics()
 {
+    display_image = GenImageColor(SCREENWIDTH, SCREENHEIGHT, PURPLE);
+
+    InitWindow(SCREENWIDTH, SCREENHEIGHT, "raylib doom");
 }
