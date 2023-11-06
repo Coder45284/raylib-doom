@@ -1655,30 +1655,30 @@ boolean G_CheckDemoStatus (void)
 	 
     if (demoplayback) 
     { 
-	if (singledemo) 
-	    I_Quit (); 
-			 
-	Z_ChangeTag (demobuffer, PU_CACHE); 
-	demoplayback = false; 
-	netdemo = false;
-	netgame = false;
-	deathmatch = false;
-	playeringame[1] = playeringame[2] = playeringame[3] = 0;
-	respawnparm = false;
-	fastparm = false;
-	nomonsters = false;
-	consoleplayer = 0;
-	D_AdvanceDemo (); 
-	return true; 
+        if (singledemo)
+            I_Quit ();
+
+        Z_ChangeTag (demobuffer, PU_CACHE);
+        demoplayback = false;
+        netdemo = false;
+        netgame = false;
+        deathmatch = false;
+        playeringame[1] = playeringame[2] = playeringame[3] = 0;
+        respawnparm = false;
+        fastparm = false;
+        nomonsters = false;
+        consoleplayer = 0;
+        D_AdvanceDemo ();
+        return true;
     } 
  
     if (demorecording) 
     { 
-	*demo_p++ = DEMOMARKER; 
-	M_WriteFile (demoname, demobuffer, demo_p - demobuffer); 
-	Z_Free (demobuffer); 
-	demorecording = false; 
-	I_Error ("Demo %s recorded",demoname); 
+        *demo_p++ = DEMOMARKER;
+        M_WriteFile (demoname, demobuffer, demo_p - demobuffer);
+        Z_Free (demobuffer);
+        demorecording = false;
+        I_Error ("Demo %s recorded",demoname);
     } 
 	 
     return false; 

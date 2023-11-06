@@ -347,39 +347,25 @@ d_int W_NumLumps (void)
 
 d_int W_CheckNumForName (d_char* name)
 {
-    union {
-	d_char	s[9];
-	d_int	x[2];
-	
-    } name8;
-    
-    d_int		v1;
-    d_int		v2;
-    lumpinfo_t*	lump_p;
+	d_char capital_name[9];
+    lumpinfo_t* lump_p;
 
-    // make the name into two integers for easy compares
-    strncpy (name8.s,name,8);
-
-    // in case the name was a fill 8 chars
-    name8.s[8] = 0;
+    for( byte i = 0; i < 9; i++ )
+        capital_name[i] = 0;
 
     // case insensitive
-    strupr (name8.s);		
-
-    v1 = name8.x[0];
-    v2 = name8.x[1];
-
+    for( byte i = 0; name[i] != '\0' && i < 9; i++ )
+        capital_name[i] = toupper( name[i] );
 
     // scan backwards so patch lump files take precedence
     lump_p = lumpinfo + numlumps;
 
     while (lump_p-- != lumpinfo)
     {
-	if ( *(d_int *)lump_p->name == v1
-	     && *(d_int *)&lump_p->name[4] == v2)
-	{
-	    return lump_p - lumpinfo;
-	}
+        if ( strncmp(capital_name, lump_p->name, 8) == 0 )
+        {
+            return lump_p - lumpinfo;
+        }
     }
 
     // TFB. Not found.

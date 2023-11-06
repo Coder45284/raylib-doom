@@ -26,6 +26,8 @@
 
 #include "doomdef.h"
 
+const char GAMEMODES[ 5 ][ 13 ] = { {"SHAREWARE"}, {"REGISTERED"}, {"COMMERCIAL"}, {"RETAIL"}, {"INDETERMINED"} };
+
 // Location for any defines turned variables.
 
 // None.

@@ -46,6 +46,7 @@ typedef enum
   
 } GameMode_t;
 
+extern const char GAMEMODES[][ 13 ];
 
 // Mission packs - might be useful for TC stuff?
 typedef enum
