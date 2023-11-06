@@ -82,8 +82,19 @@ void I_StartFrame()
 
 }
 
+static bool i_events_remaining;
+
 void I_GetEvent()
 {
+    event_t event;
+
+    int keycode_pressed = GetKeyPressed();
+
+    if(keycode_pressed == 0) {
+        i_events_remaining = false;
+    }
+    else
+        printf( "Keycode = %i\n", keycode_pressed );
 }
 
 //
@@ -91,6 +102,14 @@ void I_GetEvent()
 //
 void I_StartTic()
 {
+    if( WindowShouldClose() ) {
+        I_Quit();
+    }
+
+    i_events_remaining = true;
+
+    while( i_events_remaining )
+        I_GetEvent();
 }
 
 
@@ -130,6 +149,8 @@ void I_InitGraphics()
     int screen_height = SCREENHEIGHT;
 
     InitWindow(screen_width, screen_height, "raylib doom");
+
+    SetExitKey(0);
 
     if( GetMonitorCount() != 0 ) {
         const int current_monitor = GetCurrentMonitor();
