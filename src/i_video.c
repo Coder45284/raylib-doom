@@ -174,6 +174,10 @@ void I_SetPalette(byte* palette)
 
     for( d_short p = 0; p < PALETTE_AMOUNT; p++ ) {
         current_palette_color = &palette[ 3 * p ];
+
+        image_palette[p].r = current_palette_color[ 0 ];
+        image_palette[p].g = current_palette_color[ 1 ];
+        image_palette[p].b = current_palette_color[ 2 ];
     }
 }
 
