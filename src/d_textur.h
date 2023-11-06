@@ -26,9 +26,6 @@
 
 #include "doomtype.h"
 
-
-
-
 //
 // Flats?
 //
@@ -39,8 +36,6 @@ typedef struct
     byte		height;
     byte		data;
 } pic_t;
-
-
 
 
 #endif

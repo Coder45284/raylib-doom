@@ -21,7 +21,6 @@
 //-----------------------------------------------------------------------------
 
 #include "doomtype.h"
-static const d_char rcsid[] = "$Id: g_game.c,v 1.8 1997/02/03 22:45:09 b1 Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -504,7 +503,7 @@ boolean G_Responder (event_t* ev)
 { 
     // allow spy mode changes even during the demo
     if (gamestate == GS_LEVEL && ev->type == ev_keydown 
-	&& ev->data1 == KEY_F12 && (singledemo || !deathmatch) )
+	&& ev->data1 == D_KEY_F12 && (singledemo || !deathmatch) )
     {
 	// spy mode 
 	do 
@@ -557,7 +556,7 @@ boolean G_Responder (event_t* ev)
     switch (ev->type) 
     { 
       case ev_keydown: 
-	if (ev->data1 == KEY_PAUSE) 
+	if (ev->data1 == D_KEY_PAUSE)
 	{ 
 	    sendpause = true; 
 	    return true; 

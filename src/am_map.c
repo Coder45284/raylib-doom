@@ -87,19 +87,19 @@
 // drawing stuff
 #define	FB		0
 
-#define AM_PANDOWNKEY	KEY_DOWNARROW
-#define AM_PANUPKEY	KEY_UPARROW
-#define AM_PANRIGHTKEY	KEY_RIGHTARROW
-#define AM_PANLEFTKEY	KEY_LEFTARROW
-#define AM_ZOOMINKEY	'='
-#define AM_ZOOMOUTKEY	'-'
-#define AM_STARTKEY	KEY_TAB
-#define AM_ENDKEY	KEY_TAB
-#define AM_GOBIGKEY	'0'
-#define AM_FOLLOWKEY	'f'
-#define AM_GRIDKEY	'g'
-#define AM_MARKKEY	'm'
-#define AM_CLEARMARKKEY	'c'
+#define AM_PANDOWNKEY   D_KEY_DOWNARROW
+#define AM_PANUPKEY     D_KEY_UPARROW
+#define AM_PANRIGHTKEY  D_KEY_RIGHTARROW
+#define AM_PANLEFTKEY   D_KEY_LEFTARROW
+#define AM_ZOOMINKEY    '='
+#define AM_ZOOMOUTKEY   '-'
+#define AM_STARTKEY     D_KEY_TAB
+#define AM_ENDKEY       D_KEY_TAB
+#define AM_GOBIGKEY     '0'
+#define AM_FOLLOWKEY    'f'
+#define AM_GRIDKEY      'g'
+#define AM_MARKKEY      'm'
+#define AM_CLEARMARKKEY 'c'
 
 #define AM_NUMMARKPOINTS 10
 

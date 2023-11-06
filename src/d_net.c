@@ -91,7 +91,7 @@ d_short NetbufferSize (void)
 }
 
 //
-// Checksum 
+// Checksum
 //
 d_uint NetbufferChecksum (void)
 {
@@ -116,16 +116,16 @@ d_uint NetbufferChecksum (void)
 d_int ExpandTics (d_int low)
 {
     d_int	delta;
-	
+
     delta = low - (maketic&0xff);
-	
+
     if (delta >= -64 && delta <= 64)
 	return (maketic&~0xff) + low;
     if (delta > 64)
 	return (maketic&~0xff) - 256 + low;
     if (delta < -64)
 	return (maketic&~0xff) + 256 + low;
-		
+
     I_Error ("ExpandTics: strange value %i at maketic %i",low,maketic);
     return 0;
 }
@@ -151,11 +151,11 @@ void HSendPacket( d_int node, d_int flags )
 
     if (!netgame)
 	I_Error ("Tried to transmit to another node");
-		
+
     doomcom->command = CMD_SEND;
     doomcom->remotenode = node;
     doomcom->datalength = NetbufferSize ();
-	
+
     if (debugfile)
     {
 	d_int		i;
@@ -168,7 +168,7 @@ void HSendPacket( d_int node, d_int flags )
 	fprintf (debugfile,"send (%i + %i, R %i) [%i] ",
 		 ExpandTics(netbuffer->starttic),
 		 netbuffer->numtics, realretrans, doomcom->datalength);
-	
+
 	for (i=0 ; i<doomcom->datalength ; i++)
 	    fprintf (debugfile,"%i ",((byte *)netbuffer)[i]);
 
@@ -183,7 +183,7 @@ void HSendPacket( d_int node, d_int flags )
 // Returns false if no packet is waiting
 //
 boolean HGetPacket (void)
-{	
+{
     if (reboundpacket)
     {
 	*netbuffer = reboundstore;
@@ -197,10 +197,10 @@ boolean HGetPacket (void)
 
     if (demoplayback)
 	return false;
-		
+
     doomcom->command = CMD_GET;
     I_NetCmd ();
-    
+
     if (doomcom->remotenode == -1)
 	return false;
 
@@ -210,7 +210,7 @@ boolean HGetPacket (void)
 	    fprintf (debugfile,"bad packet length %i\n",doomcom->datalength);
 	return false;
     }
-	
+
     if (NetbufferChecksum () != (netbuffer->checksum&NCMD_CHECKSUM) )
     {
 	if (debugfile)
@@ -222,7 +222,7 @@ boolean HGetPacket (void)
     {
 	d_int		realretrans;
 	d_int	i;
-			
+
 	if (netbuffer->checksum & NCMD_SETUP)
 	    fprintf (debugfile,"setup packet\n");
 	else
@@ -231,7 +231,7 @@ boolean HGetPacket (void)
 		realretrans = ExpandTics (netbuffer->retransmitfrom);
 	    else
 		realretrans = -1;
-	    
+
 	    fprintf (debugfile,"get %i = (%i + %i, R %i)[%i] ",
 		     doomcom->remotenode,
 		     ExpandTics(netbuffer->starttic),
@@ -242,7 +242,7 @@ boolean HGetPacket (void)
 	    fprintf (debugfile,"\n");
 	}
     }
-    return true;	
+    return true;
 }
 
 
@@ -258,20 +258,20 @@ void GetPackets (void)
     ticcmd_t	*src, *dest;
     d_int		realend;
     d_int		realstart;
-				 
+
     while ( HGetPacket() )
     {
 	if (netbuffer->checksum & NCMD_SETUP)
 	    continue;		// extra setup packet
-			
+
 	netconsole = netbuffer->player & ~PL_DRONE;
 	netnode = doomcom->remotenode;
-	
+
 	// to save bytes, only the low byte of tic numbers are sent
 	// Figure out what the rest of the bytes are
-	realstart = ExpandTics (netbuffer->starttic);		
+	realstart = ExpandTics (netbuffer->starttic);
 	realend = (realstart+netbuffer->numtics);
-	
+
 	// check for exiting the game
 	if (netbuffer->checksum & NCMD_EXIT)
 	{
@@ -286,15 +286,15 @@ void GetPackets (void)
 		G_CheckDemoStatus ();
 	    continue;
 	}
-	
+
 	// check for a remote game kill
 	if (netbuffer->checksum & NCMD_KILL)
 	    I_Error ("Killed by network driver");
 
 	nodeforplayer[netconsole] = netnode;
-	
+
 	// check for retransmit request
-	if ( resendcount[netnode] <= 0 
+	if ( resendcount[netnode] <= 0
 	     && (netbuffer->checksum & NCMD_RETRANSMIT) )
 	{
 	    resendto[netnode] = ExpandTics(netbuffer->retransmitfrom);
@@ -304,11 +304,11 @@ void GetPackets (void)
 	}
 	else
 	    resendcount[netnode]--;
-	
-	// check for out of order / duplicated packet		
+
+	// check for out of order / duplicated packet
 	if (realend == nettics[netnode])
 	    continue;
-			
+
 	if (realend < nettics[netnode])
 	{
 	    if (debugfile)
@@ -317,7 +317,7 @@ void GetPackets (void)
 			 realstart,netbuffer->numtics);
 	    continue;
 	}
-	
+
 	// check for a missed packet
 	if (realstart > nettics[netnode])
 	{
@@ -335,8 +335,8 @@ void GetPackets (void)
 	    d_int		start;
 
 	    remoteresend[netnode] = false;
-		
-	    start = nettics[netnode] - realstart;		
+
+	    start = nettics[netnode] - realstart;
 	    src = &netbuffer->cmds[start];
 
 	    while (nettics[netnode] < realend)
@@ -365,14 +365,14 @@ void NetUpdate (void)
     d_int				i,j;
     d_int				realstart;
     d_int				gameticdiv;
-    
+
     // check time
     nowtime = I_GetTime ()/ticdup;
     newtics = nowtime - gametime;
     gametime = nowtime;
-	
+
     if (newtics <= 0) 	// nothing new to update
-	goto listen; 
+	goto listen;
 
     if (skiptics <= newtics)
     {
@@ -384,10 +384,10 @@ void NetUpdate (void)
 	skiptics -= newtics;
 	newtics = 0;
     }
-	
-		
+
+
     netbuffer->player = consoleplayer;
-    
+
     // build new ticcmds for console player
     gameticdiv = gametic/ticdup;
     for (i=0 ; i<newtics ; i++)
@@ -396,7 +396,7 @@ void NetUpdate (void)
 	D_ProcessEvents ();
 	if (maketic - gameticdiv >= BACKUPTICS/2-1)
 	    break;          // can't hold any more
-	
+
 	//printf ("mk:%i ",maketic);
 	G_BuildTiccmd (&localcmds[maketic%BACKUPTICS]);
 	maketic++;
@@ -405,7 +405,7 @@ void NetUpdate (void)
 
     if (singletics)
 	return;         // singletic update is syncronous
-    
+
     // send the packet to the other nodes
     for (i=0 ; i<doomcom->numnodes ; i++)
 	if (nodeingame[i])
@@ -418,9 +418,9 @@ void NetUpdate (void)
 	    resendto[i] = maketic - doomcom->extratics;
 
 	    for (j=0 ; j< netbuffer->numtics ; j++)
-		netbuffer->cmds[j] = 
+		netbuffer->cmds[j] =
 		    localcmds[(realstart+j)%BACKUPTICS];
-					
+
 	    if (remoteresend[i])
 	    {
 		netbuffer->retransmitfrom = nettics[i];
@@ -432,7 +432,7 @@ void NetUpdate (void)
 		HSendPacket (i, 0);
 	    }
 	}
-    
+
     // listen for other packets
   listen:
     GetPackets ();
@@ -447,19 +447,19 @@ void CheckAbort (void)
 {
     event_t *ev;
     d_int		stoptic;
-	
-    stoptic = I_GetTime () + 2; 
-    while (I_GetTime() < stoptic) 
-	I_StartTic (); 
-	
+
+    stoptic = I_GetTime () + 2;
+    while (I_GetTime() < stoptic)
+	I_StartTic ();
+
     I_StartTic ();
-    for ( ; eventtail != eventhead 
-	      ; eventtail = (++eventtail)&(MAXEVENTS-1) ) 
-    { 
-	ev = &events[eventtail]; 
-	if (ev->type == ev_keydown && ev->data1 == KEY_ESCAPE)
+    for ( ; eventtail != eventhead
+	      ; eventtail = (++eventtail)&(MAXEVENTS-1) )
+    {
+	ev = &events[eventtail];
+	if (ev->type == ev_keydown && ev->data1 == D_KEY_ESCAPE)
 	    I_Error ("Network game synchronization aborted.");
-    } 
+    }
 }
 
 
