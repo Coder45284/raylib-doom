@@ -21,60 +21,51 @@
 //
 //-----------------------------------------------------------------------------
 
-
-static const char
-rcsid[] = "$Id: w_wad.c,v 1.5 1997/02/03 16:47:57 b1 Exp $";
-
-#include <ctype.h>
-#include <sys/types.h>
 #include <string.h>
-#include <unistd.h>
 #include <malloc.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <alloca.h>
-#define O_BINARY		0
+#include <ctype.h>
+#include <assert.h>
 
 #include "doomtype.h"
 #include "m_swap.h"
 #include "i_system.h"
 #include "z_zone.h"
 
-#ifdef __GNUG__
-#pragma implementation "w_wad.h"
-#endif
 #include "w_wad.h"
 
-#include <strings.h>
+#include "raylib.h"
 
 //
 // GLOBALS
 //
 
 // Location of each lump on disk.
-lumpinfo_t*		lumpinfo;		
+lumpinfo_t*		lumpinfo;
 d_int			numlumps;
+#define MAX_HANDLES 20
+static unsigned char* file_handles[MAX_HANDLES];
+static d_int number_of_handles = 0;
 
 void**			lumpcache;
 
+boolean str_case_equal( const d_char *const left, const d_char *const right ) {
+    size_t length_left = strlen( left );
+    size_t length_right = strlen( right );
 
-#define strcmpi	strcasecmp
+    if( length_left != length_right )
+        return false;
+
+    for( size_t i = 0; left[i] != '\0'; i++)
+        if( toupper(left[i]) != toupper(right[i]) )
+            return false;
+
+    return true;
+}
 
 void strupr (char* s)
 {
     while (*s) { *s = toupper(*s); s++; }
 }
-
-d_int filelength (d_int handle)
-{ 
-    struct stat	fileinfo;
-    
-    if (fstat (handle,&fileinfo) == -1)
-	I_Error ("Error fstating");
-
-    return fileinfo.st_size;
-}
-
 
 void
 ExtractFileBase
@@ -134,89 +125,103 @@ d_char*			reloadname;
 
 void W_AddFile (d_char *filename)
 {
-    wadinfo_t		header;
-    lumpinfo_t*		lump_p;
-    unsigned		i;
-    d_int			handle;
-    d_int			length;
-    d_int			startlump;
-    filelump_t*		fileinfo;
-    filelump_t		singleinfo;
-    d_int			storehandle;
+    wadinfo_t   header;
+    lumpinfo_t* lump_p;
+    d_uint      i;
+    d_int       length;
+    d_int       startlump;
+    filelump_t* fileinfo;
+    filelump_t  singleinfo;
+    d_int       storehandle;
     
     // open the file and add to directory
 
     // handle reload indicator.
     if (filename[0] == '~')
     {
-	filename++;
-	reloadname = filename;
-	reloadlump = numlumps;
+        filename++;
+        reloadname = filename;
+        reloadlump = numlumps;
     }
-		
-    if ( (handle = open (filename,O_RDONLY | O_BINARY)) == -1)
+
+    unsigned int bytesRead = 0;
+
+    byte* file_data = LoadFileData(filename, &bytesRead);
+    byte* file_data_begin = file_data;
+
+    if( file_data == NULL && bytesRead == 0 )
     {
-	printf (" couldn't open %s\n",filename);
-	return;
+        printf (" couldn't open %s\n",filename);
+        return;
     }
 
     printf (" adding %s\n",filename);
     startlump = numlumps;
-	
-    if (strcmpi (filename+strlen(filename)-3 , "wad" ) )
+
+    if( !str_case_equal( GetFileExtension(filename) + 1, "wad" ) )
     {
-	// single lump file
-	fileinfo = &singleinfo;
-	singleinfo.filepos = 0;
-	singleinfo.size = LONG(filelength(handle));
-	ExtractFileBase (filename, singleinfo.name);
-	numlumps++;
+        // single lump file
+        fileinfo = &singleinfo;
+        singleinfo.filepos = 0;
+        singleinfo.size = GetFileLength(filename);
+        ExtractFileBase (filename, singleinfo.name);
+        numlumps++;
     }
     else 
     {
-	// WAD file
-	read (handle, &header, sizeof(header));
-	if (strncmp(header.identification,"IWAD",4))
-	{
-	    // Homebrew levels?
-	    if (strncmp(header.identification,"PWAD",4))
-	    {
-		I_Error ("Wad file %s doesn't have IWAD "
-			 "or PWAD id\n", filename);
-	    }
-	    
-	    // ???modifiedgame = true;		
-	}
-	header.numlumps = LONG(header.numlumps);
-	header.infotableofs = LONG(header.infotableofs);
-	length = header.numlumps*sizeof(filelump_t);
-	fileinfo = alloca (length);
-	lseek (handle, header.infotableofs, SEEK_SET);
-	read (handle, fileinfo, length);
-	numlumps += header.numlumps;
+        // WAD file
+        header.identification[0] = file_data[0]; file_data++;
+        header.identification[1] = file_data[0]; file_data++;
+        header.identification[2] = file_data[0]; file_data++;
+        header.identification[3] = file_data[0]; file_data++;
+        header.numlumps     = LONG(*((d_int*)file_data)); file_data += sizeof(d_int);
+        header.infotableofs = LONG(*((d_int*)file_data)); file_data += sizeof(d_int);
+
+        if (strncmp(header.identification,"IWAD",4))
+        {
+            // Homebrew levels?
+            if (strncmp(header.identification,"PWAD",4))
+            {
+                I_Error ("Wad file %s doesn't have IWAD or PWAD id\n", filename);
+            }
+
+            // ???modifiedgame = true;
+        }
+        file_data = file_data_begin + header.infotableofs;
+        fileinfo = (filelump_t*)file_data;
+        numlumps += header.numlumps;
     }
 
     
     // Fill in lumpinfo
-    lumpinfo = realloc (lumpinfo, numlumps*sizeof(lumpinfo_t));
+    lumpinfo = realloc (lumpinfo, numlumps * sizeof(lumpinfo_t));
 
     if (!lumpinfo)
-	I_Error ("Couldn't realloc lumpinfo");
+        I_Error ("Couldn't realloc lumpinfo");
 
     lump_p = &lumpinfo[startlump];
-	
-    storehandle = reloadname ? -1 : handle;
-	
-    for (i=startlump ; i<numlumps ; i++,lump_p++, fileinfo++)
-    {
-	lump_p->handle = storehandle;
-	lump_p->position = LONG(fileinfo->filepos);
-	lump_p->size = LONG(fileinfo->size);
-	strncpy (lump_p->name, fileinfo->name, 8);
+
+    if( reloadname )
+        storehandle = -1;
+    else if( number_of_handles < MAX_HANDLES ) {
+        storehandle = number_of_handles;
+
+        file_handles[ number_of_handles ] = file_data_begin;
+        number_of_handles++;
     }
-	
+    else
+        I_Error ("Out of handle space!");
+
+    for( i = startlump; i < numlumps; i++, lump_p++, fileinfo++ )
+    {
+        lump_p->handle = storehandle;
+        lump_p->position = LONG(fileinfo->filepos);
+        lump_p->size = LONG(fileinfo->size);
+        strncpy (lump_p->name, fileinfo->name, 8);
+    }
+
     if (reloadname)
-	close (handle);
+        UnloadFileData( file_data_begin );
 }
 
 
@@ -229,43 +234,45 @@ void W_AddFile (d_char *filename)
 //
 void W_Reload (void)
 {
-    wadinfo_t		header;
-    d_int			lumpcount;
-    lumpinfo_t*		lump_p;
-    unsigned		i;
-    d_int			handle;
-    d_int			length;
-    filelump_t*		fileinfo;
-	
-    if (!reloadname)
-	return;
-		
-    if ( (handle = open (reloadname,O_RDONLY | O_BINARY)) == -1)
-	I_Error ("W_Reload: couldn't open %s",reloadname);
+    wadinfo_t   header;
+    lumpinfo_t* lump_p;
+    d_uint      i;
+    d_int       length;
+    filelump_t* fileinfo;
 
-    read (handle, &header, sizeof(header));
-    lumpcount = LONG(header.numlumps);
-    header.infotableofs = LONG(header.infotableofs);
-    length = lumpcount*sizeof(filelump_t);
-    fileinfo = alloca (length);
-    lseek (handle, header.infotableofs, SEEK_SET);
-    read (handle, fileinfo, length);
+    if (!reloadname)
+        return;
+
+    unsigned int bytesRead = 0;
+
+    byte* file_data = LoadFileData(reloadname, &bytesRead);
+    byte* file_data_begin = file_data;
+
+    if( file_data == NULL && bytesRead == 0 )
+        I_Error ("W_Reload: couldn't open %s", reloadname);
+
+    header.identification[0] = file_data[0]; file_data++;
+    header.identification[1] = file_data[0]; file_data++;
+    header.identification[2] = file_data[0]; file_data++;
+    header.identification[3] = file_data[0]; file_data++;
+    header.numlumps     = LONG(*((d_int*)file_data)); file_data += sizeof(d_int);
+    header.infotableofs = LONG(*((d_int*)file_data)); file_data += sizeof(d_int);
+    length = header.numlumps * sizeof(filelump_t);
+    fileinfo = (filelump_t*)(file_data_begin + header.infotableofs);
     
     // Fill in lumpinfo
     lump_p = &lumpinfo[reloadlump];
-	
-    for (i=reloadlump ;
-	 i<reloadlump+lumpcount ;
-	 i++,lump_p++, fileinfo++)
-    {
-	if (lumpcache[i])
-	    Z_Free (lumpcache[i]);
 
-	lump_p->position = LONG(fileinfo->filepos);
-	lump_p->size = LONG(fileinfo->size);
+    for( i = reloadlump; i < reloadlump + header.numlumps; i++, lump_p++, fileinfo++ )
+    {
+        if (lumpcache[i])
+            Z_Free (lumpcache[i]);
+
+        lump_p->position = LONG(fileinfo->filepos);
+        lump_p->size = LONG(fileinfo->size);
     }
-	
-    close (handle);
+
+    UnloadFileData( file_data_begin );
 }
 
 
@@ -399,7 +406,7 @@ d_int W_GetNumForName (d_char* name)
 d_int W_LumpLength (d_int lump)
 {
     if (lump >= numlumps)
-	I_Error ("W_LumpLength: %i >= numlumps",lump);
+        I_Error ("W_LumpLength: %i >= numlumps",lump);
 
     return lumpinfo[lump].size;
 }
@@ -412,40 +419,42 @@ d_int W_LumpLength (d_int lump)
 //  which must be >= W_LumpLength().
 //
 void
-W_ReadLump
-( d_int		lump,
-  void*		dest )
+W_ReadLump( d_int lump, void* dest )
 {
-    d_int		c;
-    lumpinfo_t*	l;
-    d_int		handle;
-	
-    if (lump >= numlumps)
-	I_Error ("W_ReadLump: %i >= numlumps",lump);
+    d_int       c;
+    lumpinfo_t* l;
+    byte* file_data;
 
-    l = lumpinfo+lump;
-	
+    if(lump >= numlumps)
+        I_Error("W_ReadLump: %i >= numlumps", lump);
+
+    l = lumpinfo + lump;
+
     // ??? I_BeginRead ();
-	
-    if (l->handle == -1)
+
+    if(l->handle == -1)
     {
-	// reloadable file, so use open / read / close
-	if ( (handle = open (reloadname,O_RDONLY | O_BINARY)) == -1)
-	    I_Error ("W_ReadLump: couldn't open %s",reloadname);
+        unsigned int bytesRead = 0;
+
+        file_data = LoadFileData(reloadname, &bytesRead);
+
+        if( file_data == NULL && bytesRead == 0 )
+            I_Error ("W_ReadLump: couldn't open %s", reloadname);
     }
     else
-	handle = l->handle;
-		
-    lseek (handle, l->position, SEEK_SET);
-    c = read (handle, dest, l->size);
+        file_data = file_handles[ l->handle ];
 
-    if (c < l->size)
-	I_Error ("W_ReadLump: only read %i of %i on lump %i",
-		 c,l->size,lump);	
+    // TODO Add bounds checking.
+    dest = memcpy(dest, file_data + l->position, l->size);
 
-    if (l->handle == -1)
-	close (handle);
-		
+    c = l->size;
+
+    if(c < l->size)
+        I_Error("W_ReadLump: only read %i of %i on lump %i", c, l->size, lump);
+
+    if(l->handle == -1)
+        UnloadFileData( file_data );
+
     // ??? I_EndRead ();
 }
 
@@ -462,7 +471,7 @@ W_CacheLumpNum
 {
     byte*	ptr;
 
-    if ((unsigned)lump >= numlumps)
+    if ((d_uint)lump >= numlumps)
 	I_Error ("W_CacheLumpNum: %i >= numlumps",lump);
 		
     if (!lumpcache[lump])

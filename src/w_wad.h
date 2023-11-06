@@ -25,11 +25,6 @@
 
 #include "doomtype.h"
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
-
 //
 // TYPES
 //
