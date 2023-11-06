@@ -59,11 +59,14 @@ void I_StartFrame()
         }
     }
 
-    double length = (double)GetScreenHeight() / (double)SCREENHEIGHT;
-    Vector2 position = {0, 0};
+    double span = (double)GetScreenHeight() / (double)SCREENHEIGHT;
+    Vector2 position = {(GetScreenWidth() - span * SCREENWIDTH) / 2, 0};
 
-    if( length * SCREENWIDTH > GetScreenWidth() )
-        length = (double)GetScreenWidth() / (double)SCREENWIDTH;
+    if( span * SCREENWIDTH > GetScreenWidth() ) {
+        span = (double)GetScreenWidth() / (double)SCREENWIDTH;
+        position.x = 0;
+        position.y = (GetScreenHeight() - span * SCREENHEIGHT) / 2;
+    }
 
     Texture2D display_texture = LoadTextureFromImage(display_image);
 
@@ -71,7 +74,7 @@ void I_StartFrame()
 
     ClearBackground(BLACK);
 
-    DrawTextureEx(display_texture, position, 0.0f, length, WHITE);
+    DrawTextureEx(display_texture, position, 0.0f, span, WHITE);
 
     EndDrawing();
 
@@ -125,8 +128,11 @@ void I_InitGraphics()
 {
     display_image = GenImageColor(SCREENWIDTH, SCREENHEIGHT, PURPLE);
 
+    int screen_width = SCREENWIDTH;
+    int screen_height = SCREENHEIGHT;
+
     InitWindow(SCREENWIDTH, SCREENHEIGHT, "raylib doom");
 
     SetWindowState( FLAG_WINDOW_RESIZABLE );
-    SetWindowMinSize(2 * SCREENWIDTH, 2 * SCREENHEIGHT);
+    SetWindowMinSize(SCREENWIDTH, SCREENHEIGHT);
 }
