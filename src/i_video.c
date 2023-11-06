@@ -97,6 +97,16 @@ void I_GetEvent()
         printf( "Keycode = %i\n", keycode_pressed );
 }
 
+#define KEYMAP( RL_KEY, D_KEY )\
+if( IsKeyPressed( RL_KEY ) ) {\
+    event.type = ev_keydown;\
+    event.data1 = D_KEY;\
+    D_PostEvent(&event);\
+}\
+if( IsKeyReleased( RL_KEY ) ) {\
+    event.type = ev_keyup;\
+    event.data1 = D_KEY;\
+    D_PostEvent(&event);}
 //
 // I_StartTic
 //
@@ -112,16 +122,25 @@ void I_StartTic()
     //while( i_events_remaining )
         //I_GetEvent();
 
-    if( IsKeyPressed( KEY_ESCAPE ) ) {
-        event.type = ev_keydown;
-        event.data1 = D_KEY_ESCAPE;
-        D_PostEvent(&event);
-    }
-    if( IsKeyReleased( KEY_ESCAPE ) ) {
-        event.type = ev_keyup;
-        event.data1 = D_KEY_ESCAPE;
-        D_PostEvent(&event);
-    }
+    KEYMAP( KEY_RIGHT,  D_KEY_RIGHTARROW )
+    KEYMAP( KEY_LEFT,   D_KEY_LEFTARROW )
+    KEYMAP( KEY_UP,     D_KEY_UPARROW )
+    KEYMAP( KEY_DOWN,   D_KEY_DOWNARROW )
+    KEYMAP( KEY_ESCAPE, D_KEY_ESCAPE )
+    KEYMAP( KEY_ENTER,  D_KEY_ENTER )
+    KEYMAP( KEY_TAB,    D_KEY_TAB )
+    KEYMAP( KEY_F1,     D_KEY_F1 )
+    KEYMAP( KEY_F2,     D_KEY_F2 )
+    KEYMAP( KEY_F3,     D_KEY_F3 )
+    KEYMAP( KEY_F4,     D_KEY_F4 )
+    KEYMAP( KEY_F5,     D_KEY_F5 )
+    KEYMAP( KEY_F6,     D_KEY_F6 )
+    KEYMAP( KEY_F7,     D_KEY_F7 )
+    KEYMAP( KEY_F8,     D_KEY_F8 )
+    KEYMAP( KEY_F9,     D_KEY_F9 )
+    KEYMAP( KEY_F10,    D_KEY_F10 )
+    KEYMAP( KEY_F11,    D_KEY_F11 )
+    KEYMAP( KEY_F12,    D_KEY_F12 )
 }
 
 
