@@ -1360,38 +1360,38 @@ boolean M_Responder (event_t* ev)
 	
     if (ev->type == ev_joystick && joywait < I_GetTime())
     {
-	if (ev->data3 == -1)
-	{
-	    ch = D_KEY_UPARROW;
-	    joywait = I_GetTime() + 5;
-	}
-	else if (ev->data3 == 1)
-	{
-	    ch = D_KEY_DOWNARROW;
-	    joywait = I_GetTime() + 5;
-	}
-		
-	if (ev->data2 == -1)
-	{
-	    ch = D_KEY_LEFTARROW;
-	    joywait = I_GetTime() + 2;
-	}
-	else if (ev->data2 == 1)
-	{
-	    ch = D_KEY_RIGHTARROW;
-	    joywait = I_GetTime() + 2;
-	}
-		
-	if (ev->data1&1)
-	{
-	    ch = D_KEY_ENTER;
-	    joywait = I_GetTime() + 5;
-	}
-	if (ev->data1&2)
-	{
-	    ch = D_KEY_BACKSPACE;
-	    joywait = I_GetTime() + 5;
-	}
+        if (ev->data3 == -1)
+        {
+            ch = D_KEY_UPARROW;
+            joywait = I_GetTime() + 5;
+        }
+        else if (ev->data3 == 1)
+        {
+            ch = D_KEY_DOWNARROW;
+            joywait = I_GetTime() + 5;
+        }
+
+        if (ev->data2 == -1)
+        {
+            ch = D_KEY_LEFTARROW;
+            joywait = I_GetTime() + 2;
+        }
+        else if (ev->data2 == 1)
+        {
+            ch = D_KEY_RIGHTARROW;
+            joywait = I_GetTime() + 2;
+        }
+
+        if (ev->data1&1)
+        {
+            ch = D_KEY_ENTER;
+            joywait = I_GetTime() + 5;
+        }
+        if (ev->data1&2)
+        {
+            ch = D_KEY_BACKSPACE;
+            joywait = I_GetTime() + 5;
+        }
     }
     else
     {
