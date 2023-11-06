@@ -23,8 +23,6 @@
 
 #include "doomtype.h"
 
-static const d_char rcsid[] = "$Id: am_map.c,v 1.4 1997/02/03 21:24:33 b1 Exp $";
-
 #include <stdio.h>
 
 
@@ -1335,11 +1333,11 @@ void AM_Drawer (void)
 
     AM_clearFB(BACKGROUND);
     if (grid)
-	AM_drawGrid(GRIDCOLORS);
+		AM_drawGrid(GRIDCOLORS);
     AM_drawWalls();
     AM_drawPlayers();
     if (cheating==2)
-	AM_drawThings(THINGCOLORS, THINGRANGE);
+		AM_drawThings(THINGCOLORS, THINGRANGE);
     AM_drawCrosshair(XHAIRCOLORS);
 
     AM_drawMarks();

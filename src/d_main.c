@@ -25,7 +25,6 @@
 //-----------------------------------------------------------------------------
 
 #include "doomtype.h"
-static const d_char rcsid[] = "$Id: d_main.c,v 1.8 1997/02/03 22:45:09 b1 Exp $";
 
 #define	BGCOLOR		7
 #define	FGCOLOR		8
@@ -33,13 +32,7 @@ static const d_char rcsid[] = "$Id: d_main.c,v 1.8 1997/02/03 22:45:09 b1 Exp $"
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef __linux__
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#endif
-
+#include "raylib.h"
 
 #include "doomdef.h"
 #include "doomstat.h"
@@ -653,7 +646,7 @@ void IdentifyVersion (void)
 	return;
     }
 
-    if ( !access (doom2fwad,R_OK) )
+    if ( FileExists( doom2fwad ) )
     {
 	gamemode = commercial;
 	// C'est ridicule!
@@ -664,42 +657,42 @@ void IdentifyVersion (void)
 	return;
     }
 
-    if ( !access (doom2wad,R_OK) )
+    if ( FileExists ( doom2wad ) )
     {
 	gamemode = commercial;
 	D_AddFile (doom2wad);
 	return;
     }
 
-    if ( !access (plutoniawad, R_OK ) )
+    if ( FileExists ( plutoniawad ) )
     {
       gamemode = commercial;
       D_AddFile (plutoniawad);
       return;
     }
 
-    if ( !access ( tntwad, R_OK ) )
+    if ( FileExists ( tntwad ) )
     {
       gamemode = commercial;
       D_AddFile (tntwad);
       return;
     }
 
-    if ( !access (doomuwad,R_OK) )
+    if ( FileExists ( doomuwad ) )
     {
       gamemode = retail;
       D_AddFile (doomuwad);
       return;
     }
 
-    if ( !access (doomwad,R_OK) )
+    if ( FileExists ( doomwad ) )
     {
       gamemode = registered;
       D_AddFile (doomwad);
       return;
     }
 
-    if ( !access (doom1wad,R_OK) )
+    if ( FileExists ( doom1wad ) )
     {
       gamemode = shareware;
       D_AddFile (doom1wad);
@@ -808,9 +801,9 @@ void D_DoomMain (void)
     fastparm = M_CheckParm ("-fast");
     devparm = M_CheckParm ("-devparm");
     if (M_CheckParm ("-altdeath"))
-	deathmatch = 2;
+		deathmatch = 2;
     else if (M_CheckParm ("-deathmatch"))
-	deathmatch = 1;
+		deathmatch = 1;
 
     switch ( gamemode )
     {
@@ -871,14 +864,7 @@ void D_DoomMain (void)
 
     if (devparm)
 	printf(D_DEVSTR);
-    
-    if (M_CheckParm("-cdrom"))
-    {
-	printf(D_CDROM);
-	mkdir("c:\\doomdata",0);
-	strcpy (basedefault,"c:/doomdata/default.cfg");
-    }	
-    
+
     // turbo option
     if ( (p=M_CheckParm ("-turbo")) )
     {

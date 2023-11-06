@@ -38,9 +38,7 @@
 
 
 
-#ifdef LINUX
-#include <math.h>
-#else
+#ifndef PI
 #define PI				3.141592657
 #endif
 
