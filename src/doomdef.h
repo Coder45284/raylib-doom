@@ -268,17 +268,17 @@ typedef enum
 #define D_KEY_F11        (0x80+0x57)
 #define D_KEY_F12        (0x80+0x58)
 
-#define D_KEY_BACKSPACE	127
-#define D_KEY_PAUSE	0xff
+#define D_KEY_BACKSPACE   127
+#define D_KEY_PAUSE       0xff
 
-#define D_KEY_EQUALS	0x3d
-#define D_KEY_MINUS	0x2d
+#define D_KEY_EQUALS      0x3d
+#define D_KEY_MINUS       0x2d
 
-#define D_KEY_RSHIFT	(0x80+0x36)
-#define D_KEY_RCTRL	(0x80+0x1d)
-#define D_KEY_RALT	(0x80+0x38)
+#define D_KEY_RSHIFT     (0x80+0x36)
+#define D_KEY_RCTRL      (0x80+0x1d)
+#define D_KEY_RALT       (0x80+0x38)
 
-#define D_KEY_LALT	D_KEY_RALT
+#define D_KEY_LALT        D_KEY_RALT
 
 
 

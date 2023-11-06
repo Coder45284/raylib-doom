@@ -90,7 +90,7 @@ void I_GetEvent()
 
     int keycode_pressed = GetKeyPressed();
 
-    if(keycode_pressed == 0) {
+    if(keycode_pressed == KEY_NULL) {
         i_events_remaining = false;
     }
     else
@@ -102,14 +102,26 @@ void I_GetEvent()
 //
 void I_StartTic()
 {
+    event_t event;
+
     if( WindowShouldClose() ) {
         I_Quit();
     }
 
-    i_events_remaining = true;
+    //i_events_remaining = true;
+    //while( i_events_remaining )
+        //I_GetEvent();
 
-    while( i_events_remaining )
-        I_GetEvent();
+    if( IsKeyPressed( KEY_ESCAPE ) ) {
+        event.type = ev_keydown;
+        event.data1 = D_KEY_ESCAPE;
+        D_PostEvent(&event);
+    }
+    if( IsKeyReleased( KEY_ESCAPE ) ) {
+        event.type = ev_keyup;
+        event.data1 = D_KEY_ESCAPE;
+        D_PostEvent(&event);
+    }
 }
 
 

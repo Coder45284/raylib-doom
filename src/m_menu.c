@@ -1445,7 +1445,7 @@ boolean M_Responder (event_t* ev)
     }
     
     if (ch == -1)
-	return false;
+        return false;
 
     
     // Save Game string input
