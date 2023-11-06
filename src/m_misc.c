@@ -224,11 +224,11 @@ extern d_char*	chat_macros[];
 
 typedef struct
 {
-    d_char*	name;
-    d_int*	location;
-    size_t	defaultvalue;
-    size_t	scantranslate;		// PC scan code hack
-    size_t	untranslated;		// lousy hack
+    d_char*  name;
+    d_int*   location;
+    d_intptr defaultvalue;
+    d_int    scantranslate;		// PC scan code hack
+    d_int    untranslated;		// lousy hack
 } default_t;
 
 default_t	defaults[] =
@@ -285,16 +285,16 @@ default_t	defaults[] =
 
     {"usegamma",&usegamma, 0},
 
-    {"chatmacro0", (d_int *) &chat_macros[0], (size_t) HUSTR_CHATMACRO0 },
-    {"chatmacro1", (d_int *) &chat_macros[1], (size_t) HUSTR_CHATMACRO1 },
-    {"chatmacro2", (d_int *) &chat_macros[2], (size_t) HUSTR_CHATMACRO2 },
-    {"chatmacro3", (d_int *) &chat_macros[3], (size_t) HUSTR_CHATMACRO3 },
-    {"chatmacro4", (d_int *) &chat_macros[4], (size_t) HUSTR_CHATMACRO4 },
-    {"chatmacro5", (d_int *) &chat_macros[5], (size_t) HUSTR_CHATMACRO5 },
-    {"chatmacro6", (d_int *) &chat_macros[6], (size_t) HUSTR_CHATMACRO6 },
-    {"chatmacro7", (d_int *) &chat_macros[7], (size_t) HUSTR_CHATMACRO7 },
-    {"chatmacro8", (d_int *) &chat_macros[8], (size_t) HUSTR_CHATMACRO8 },
-    {"chatmacro9", (d_int *) &chat_macros[9], (size_t) HUSTR_CHATMACRO9 }
+    {"chatmacro0", (d_int *) &chat_macros[0], (d_intptr) HUSTR_CHATMACRO0 },
+    {"chatmacro1", (d_int *) &chat_macros[1], (d_intptr) HUSTR_CHATMACRO1 },
+    {"chatmacro2", (d_int *) &chat_macros[2], (d_intptr) HUSTR_CHATMACRO2 },
+    {"chatmacro3", (d_int *) &chat_macros[3], (d_intptr) HUSTR_CHATMACRO3 },
+    {"chatmacro4", (d_int *) &chat_macros[4], (d_intptr) HUSTR_CHATMACRO4 },
+    {"chatmacro5", (d_int *) &chat_macros[5], (d_intptr) HUSTR_CHATMACRO5 },
+    {"chatmacro6", (d_int *) &chat_macros[6], (d_intptr) HUSTR_CHATMACRO6 },
+    {"chatmacro7", (d_int *) &chat_macros[7], (d_intptr) HUSTR_CHATMACRO7 },
+    {"chatmacro8", (d_int *) &chat_macros[8], (d_intptr) HUSTR_CHATMACRO8 },
+    {"chatmacro9", (d_int *) &chat_macros[9], (d_intptr) HUSTR_CHATMACRO9 }
 
 };
 
@@ -392,7 +392,7 @@ void M_LoadDefaults (void)
 			    *defaults[i].location = parm;
 			else
 			    *defaults[i].location =
-				(d_int) newstring;
+				(d_intptr) newstring;
 			break;
 		    }
 	    }
