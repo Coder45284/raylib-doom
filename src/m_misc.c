@@ -213,11 +213,6 @@ extern d_char*	sndserver_filename;
 extern d_int	mb_used;
 #endif
 
-#ifdef LINUX
-d_char*		mousetype;
-d_char*		mousedev;
-#endif
-
 extern d_char*	chat_macros[];
 
 
@@ -238,32 +233,17 @@ default_t	defaults[] =
     {"music_volume",&snd_MusicVolume, 8},
     {"show_messages",&showMessages, 1},
     
-
-#ifdef NORMALUNIX
-    {"key_right",&key_right, KEY_RIGHTARROW},
-    {"key_left",&key_left, KEY_LEFTARROW},
-    {"key_up",&key_up, KEY_UPARROW},
-    {"key_down",&key_down, KEY_DOWNARROW},
+    {"key_right",&key_right, D_KEY_RIGHTARROW},
+    {"key_left",&key_left, D_KEY_LEFTARROW},
+    {"key_up",&key_up, D_KEY_UPARROW},
+    {"key_down",&key_down, D_KEY_DOWNARROW},
     {"key_strafeleft",&key_strafeleft, ','},
     {"key_straferight",&key_straferight, '.'},
 
-    {"key_fire",&key_fire, KEY_RCTRL},
+    {"key_fire",&key_fire, D_KEY_RCTRL},
     {"key_use",&key_use, ' '},
-    {"key_strafe",&key_strafe, KEY_RALT},
-    {"key_speed",&key_speed, KEY_RSHIFT},
-
-// UNIX hack, to be removed. 
-#ifdef SNDSERV
-    {"sndserver", (d_int *) &sndserver_filename, (d_int) "sndserver"},
-    {"mb_used", &mb_used, 2},
-#endif
-    
-#endif
-
-#ifdef LINUX
-    {"mousedev", (d_int*)&mousedev, (d_int)"/dev/ttyS0"},
-    {"mousetype", (d_int*)&mousetype, (d_int)"microsoft"},
-#endif
+    {"key_strafe",&key_strafe, D_KEY_RALT},
+    {"key_speed",&key_speed, D_KEY_RSHIFT},
 
     {"use_mouse",&usemouse, 1},
     {"mouseb_fire",&mousebfire,0},

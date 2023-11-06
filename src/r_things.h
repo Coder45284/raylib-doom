@@ -24,10 +24,6 @@
 #define __R_THINGS__
 
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #define MAXVISSPRITES  	128
 
 extern vissprite_t	vissprites[MAXVISSPRITES];
@@ -36,12 +32,12 @@ extern vissprite_t	vsprsortedhead;
 
 // Constant arrays used for psprite clipping
 //  and initializing clipping.
-extern short		negonearray[SCREENWIDTH];
-extern short		screenheightarray[SCREENWIDTH];
+extern d_short		negonearray[SCREENWIDTH];
+extern d_short		screenheightarray[SCREENWIDTH];
 
 // vars for R_DrawMaskedColumn
-extern short*		mfloorclip;
-extern short*		mceilingclip;
+extern d_short*		mfloorclip;
+extern d_short*		mceilingclip;
 extern fixed_t		spryscale;
 extern fixed_t		sprtopscreen;
 
@@ -57,15 +53,15 @@ void R_SortVisSprites (void);
 void R_AddSprites (sector_t* sec);
 void R_AddPSprites (void);
 void R_DrawSprites (void);
-void R_InitSprites (char** namelist);
+void R_InitSprites (d_char** namelist);
 void R_ClearSprites (void);
 void R_DrawMasked (void);
 
 void
 R_ClipVisSprite
 ( vissprite_t*		vis,
-  int			xl,
-  int			xh );
+  d_int			xl,
+  d_int			xh );
 
 
 #endif
