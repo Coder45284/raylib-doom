@@ -25,16 +25,9 @@
 //-----------------------------------------------------------------------------
 
 #include "doomtype.h"
-static const d_char rcsid[] = "$Id: m_misc.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
 #include <stdlib.h>
-#include <unistd.h>
-
 #include <ctype.h>
-
 
 #include "doomdef.h"
 
@@ -58,6 +51,8 @@ static const d_char rcsid[] = "$Id: m_misc.c,v 1.6 1997/02/03 22:45:10 b1 Exp $"
 #include "dstrings.h"
 
 #include "m_misc.h"
+
+#include "raylib.h"
 
 //
 // M_DrawText
@@ -105,30 +100,15 @@ M_DrawText
 //
 // M_WriteFile
 //
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
 
-boolean
-M_WriteFile
-( d_char const*	name,
-  void*		source,
-  d_int		length )
+boolean M_WriteFile( d_char const* name, void* source, d_int length )
 {
-    d_int		handle;
-    d_int		count;
-	
-    handle = open ( name, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666);
+    if( !SaveFileData(name, source, length) )
+        return false;
 
-    if (handle == -1)
-	return false;
+    if( GetFileLength(name) < length )
+        return false;
 
-    count = write (handle, source, length);
-    close (handle);
-	
-    if (count < length)
-	return false;
-		
     return true;
 }
 
@@ -136,30 +116,28 @@ M_WriteFile
 //
 // M_ReadFile
 //
-d_int
-M_ReadFile
-( d_char const*	name,
-  byte**	buffer )
+d_int M_ReadFile ( d_char const* name, byte** buffer )
 {
-    d_int	handle, count, length;
-    struct stat	fileinfo;
-    byte		*buf;
-	
-    handle = open (name, O_RDONLY | O_BINARY, 0666);
-    if (handle == -1)
-	I_Error ("Couldn't read file %s", name);
-    if (fstat (handle,&fileinfo) == -1)
-	I_Error ("Couldn't read file %s", name);
-    length = fileinfo.st_size;
-    buf = Z_Malloc (length, PU_STATIC, NULL);
-    count = read (handle, buf, length);
-    close (handle);
-	
-    if (count < length)
-	I_Error ("Couldn't read file %s", name);
-		
+    byte        *readFile, *buf;
+    unsigned int fileLength;
+
+    readFile = LoadFileData( name, &fileLength );
+
+    if(readFile == NULL)
+        I_Error ("Couldn't read file %s", name);
+
+    buf = Z_Malloc (fileLength, PU_STATIC, NULL);
+
+    if( buf == NULL ) {
+        UnloadFileData( readFile );
+        I_Error ("M_ReadFile: Z_Malloc ran out of space for \"%s\"", name);
+
+    }
+    memcpy(buf, readFile, fileLength);
+    UnloadFileData( readFile );
+
     *buffer = buf;
-    return length;
+    return fileLength;
 }
 
 
@@ -497,7 +475,7 @@ void M_ScreenShot (void)
     {
 	lbmname[4] = i/10 + '0';
 	lbmname[5] = i%10 + '0';
-	if (access(lbmname,0) == -1)
+	if( !FileExists(lbmname) )
 	    break;	// file doesn't exist
     }
     if (i==100)

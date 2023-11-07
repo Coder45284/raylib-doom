@@ -26,7 +26,6 @@
 #include "raylib.h"
 
 #include <stdlib.h>
-#include <stdarg.h>
 
 #include "doomstat.h"
 #include "i_system.h"

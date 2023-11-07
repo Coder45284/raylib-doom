@@ -22,12 +22,6 @@
 //-----------------------------------------------------------------------------
 
 #include "doomtype.h"
-static const d_char rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
-
-
-#ifdef __GNUG__
-#pragma implementation "doomstat.h"
-#endif
 #include "doomstat.h"
 
 

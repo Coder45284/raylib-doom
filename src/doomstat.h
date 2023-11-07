@@ -36,13 +36,6 @@
 // We need the playr data structure as well.
 #include "d_player.h"
 
-
-#ifdef __GNUG__
-#pragma interface
-#endif
-
-
-
 // ------------------------
 // Command line parameters.
 //
@@ -242,7 +235,7 @@ extern  d_int		maxammo[NUMAMMO];
 
 // File handling stuff.
 extern	d_char		basedefault[1024];
-extern  FILE*		debugfile;
+extern  FILE*		debugfile; // TODO Convert this to raylib definitions
 
 // if true, load all graphics at level load
 extern  boolean         precache;
