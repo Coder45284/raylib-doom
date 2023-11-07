@@ -149,7 +149,8 @@ void I_FinishUpdate()
 
     BeginDrawing();
 
-    ClearBackground(BLACK);
+    if(IsWindowResized())
+        ClearBackground(BLACK);
 
     DrawTextureEx(display_texture, position, 0.0f, span, WHITE);
 
