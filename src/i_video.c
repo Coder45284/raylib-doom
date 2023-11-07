@@ -53,31 +53,6 @@ void I_ShutdownGraphics()
 //
 void I_StartFrame()
 {
-    for( d_int x = 0; x < SCREENHEIGHT; x++ ) {
-        for( d_int y = 0; y < SCREENWIDTH; y++ ) {
-            ImageDrawPixel(&display_image, y, x, image_palette[screens[0][ x * SCREENWIDTH + y ]]);
-        }
-    }
-
-    double span = (double)GetScreenHeight() / (double)SCREENHEIGHT;
-    Vector2 position = {(GetScreenWidth() - span * SCREENWIDTH) / 2, 0};
-
-    if( span * SCREENWIDTH > GetScreenWidth() ) {
-        span = (double)GetScreenWidth() / (double)SCREENWIDTH;
-        position.x = 0;
-        position.y = (GetScreenHeight() - span * SCREENHEIGHT) / 2;
-    }
-
-    UpdateTexture(display_texture, display_image.data);
-
-    BeginDrawing();
-
-    ClearBackground(BLACK);
-
-    DrawTextureEx(display_texture, position, 0.0f, span, WHITE);
-
-    EndDrawing();
-
 }
 
 static bool i_events_remaining;
@@ -155,6 +130,30 @@ void I_UpdateNoBlit()
 //
 void I_FinishUpdate()
 {
+    for( d_int x = 0; x < SCREENHEIGHT; x++ ) {
+        for( d_int y = 0; y < SCREENWIDTH; y++ ) {
+            ImageDrawPixel(&display_image, y, x, image_palette[screens[0][ x * SCREENWIDTH + y ]]);
+        }
+    }
+
+    double span = (double)GetScreenHeight() / (double)SCREENHEIGHT;
+    Vector2 position = {(GetScreenWidth() - span * SCREENWIDTH) / 2, 0};
+
+    if( span * SCREENWIDTH > GetScreenWidth() ) {
+        span = (double)GetScreenWidth() / (double)SCREENWIDTH;
+        position.x = 0;
+        position.y = (GetScreenHeight() - span * SCREENHEIGHT) / 2;
+    }
+
+    UpdateTexture(display_texture, display_image.data);
+
+    BeginDrawing();
+
+    ClearBackground(BLACK);
+
+    DrawTextureEx(display_texture, position, 0.0f, span, WHITE);
+
+    EndDrawing();
 }
 
 //
