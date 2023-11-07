@@ -23,7 +23,6 @@
 #ifndef __SOUNDS__
 #define __SOUNDS__
 
-
 //
 // SoundFX struct.
 //
