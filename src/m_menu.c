@@ -24,10 +24,6 @@
 
 #include "doomtype.h"
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <ctype.h>
 
@@ -62,7 +58,7 @@
 
 #include "m_menu.h"
 
-
+#include "raylib.h"
 
 extern patch_t*		hu_font[HU_FONTSIZE];
 extern boolean		message_dontfuckwithme;
@@ -509,28 +505,28 @@ menu_t  SaveDef =
 //
 void M_ReadSaveStrings(void)
 {
-    d_int             handle;
-    d_int             count;
+    byte* file_data;
+    unsigned int count;
     d_int             i;
     d_char    name[256];
 	
     for (i = 0;i < load_end;i++)
     {
-	if (M_CheckParm("-cdrom"))
-	    sprintf(name,"c:\\doomdata\\"SAVEGAMENAME"%d.dsg",i);
-	else
-	    sprintf(name,SAVEGAMENAME"%d.dsg",i);
+        sprintf(name,SAVEGAMENAME"%d.dsg",i);
 
-	handle = open (name, O_RDONLY | 0, 0666);
-	if (handle == -1)
-	{
-	    strcpy(&savegamestrings[i][0],EMPTYSTRING);
-	    LoadMenu[i].status = 0;
-	    continue;
-	}
-	count = read (handle, &savegamestrings[i], SAVESTRINGSIZE);
-	close (handle);
-	LoadMenu[i].status = 1;
+        count = 0;
+        file_data = LoadFileData(name, &count);
+        if(file_data == NULL || count < SAVESTRINGSIZE)
+        {
+            strcpy(&savegamestrings[i][0],EMPTYSTRING);
+            LoadMenu[i].status = 0;
+            continue;
+        }
+        memcpy(&savegamestrings[i], file_data, SAVESTRINGSIZE);
+
+        UnloadFileData( file_data );
+
+        LoadMenu[i].status = 1;
     }
 }
 
