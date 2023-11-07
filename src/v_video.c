@@ -213,11 +213,11 @@ V_DrawPatch
 	 
     y -= SHORT(patch->topoffset); 
     x -= SHORT(patch->leftoffset); 
-#ifdef RANGECHECK 
+#ifdef RANGECHECK
     if (x<0
 	||x+SHORT(patch->width) >SCREENWIDTH
 	|| y<0
-	|| y+SHORT(patch->height)>SCREENHEIGHT 
+	|| y+SHORT(patch->height)>SCREENHEIGHT
 	|| (unsigned)scrn>4)
     {
       fprintf( stderr, "Patch at %d,%d exceeds LFB\n", x,y );
@@ -225,7 +225,7 @@ V_DrawPatch
       fprintf( stderr, "V_DrawPatch: bad patch (ignored)\n");
       return;
     }
-#endif 
+#endif
  
     if (!scrn)
 	V_MarkRect (x, y, SHORT(patch->width), SHORT(patch->height)); 

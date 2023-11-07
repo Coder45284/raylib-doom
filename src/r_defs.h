@@ -38,13 +38,6 @@
 #include "p_mobj.h"
 
 
-
-#ifdef __GNUG__
-#pragma interface
-#endif
-
-
-
 // Silhouette, needed for clipping Segs (mainly)
 // and sprites representing things.
 #define SIL_NONE		0
@@ -355,10 +348,10 @@ typedef struct drawseg_s
 // of patches.
 typedef struct 
 { 
-    d_ushort		width;		// bounding box size
-    d_ushort		height;
-    d_ushort		leftoffset;	// pixels to the left of origin
-    d_ushort		topoffset;	// pixels below the origin
+    d_short		width;		// bounding box size
+    d_short		height;
+    d_short		leftoffset;	// pixels to the left of origin
+    d_short		topoffset;	// pixels below the origin
     d_int			columnofs[8];	// only [width] used
     // the [0] is &columnofs[width] 
 } patch_t;
