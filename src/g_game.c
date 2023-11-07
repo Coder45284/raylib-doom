@@ -846,7 +846,7 @@ G_CheckSpot
     fixed_t		x;
     fixed_t		y; 
     subsector_t*	ss; 
-    unsigned		an; 
+    d_uint		an;
     mobj_t*		mo; 
     d_int			i;
 	

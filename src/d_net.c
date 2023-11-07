@@ -85,9 +85,9 @@ doomdata_t	reboundstore;
 //
 //
 //
-d_short NetbufferSize (void)
+d_intptr NetbufferSize (void)
 {
-    return (d_short)&(((doomdata_t *)0)->cmds[netbuffer->numtics]);
+    return (d_intptr)&(((doomdata_t *)0)->cmds[netbuffer->numtics]);
 }
 
 //
