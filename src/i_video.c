@@ -40,6 +40,21 @@
 static Color image_palette[PALETTE_AMOUNT];
 static Image display_image;
 static Texture2D display_texture;
+static double screen_scale = 1.0;
+static Vector2 screen_position = {0, 0};
+
+static void adjust_scales() {
+    screen_scale = (double)GetScreenHeight() / (double)SCREENHEIGHT;
+
+    screen_position.x = (GetScreenWidth() - screen_scale * SCREENWIDTH) / 2;
+    screen_position.y = 0;
+
+    if( screen_scale * SCREENWIDTH > GetScreenWidth() ) {
+        screen_scale = (double)GetScreenWidth() / (double)SCREENWIDTH;
+        screen_position.x = 0;
+        screen_position.y = (GetScreenHeight() - screen_scale * SCREENHEIGHT) / 2;
+    }
+}
 
 void I_ShutdownGraphics()
 {
@@ -130,29 +145,23 @@ void I_UpdateNoBlit()
 //
 void I_FinishUpdate()
 {
+
     for( d_int x = 0; x < SCREENHEIGHT; x++ ) {
         for( d_int y = 0; y < SCREENWIDTH; y++ ) {
             ImageDrawPixel(&display_image, y, x, image_palette[screens[0][ x * SCREENWIDTH + y ]]);
         }
     }
 
-    double span = (double)GetScreenHeight() / (double)SCREENHEIGHT;
-    Vector2 position = {(GetScreenWidth() - span * SCREENWIDTH) / 2, 0};
-
-    if( span * SCREENWIDTH > GetScreenWidth() ) {
-        span = (double)GetScreenWidth() / (double)SCREENWIDTH;
-        position.x = 0;
-        position.y = (GetScreenHeight() - span * SCREENHEIGHT) / 2;
-    }
-
     UpdateTexture(display_texture, display_image.data);
 
     BeginDrawing();
 
-    if(IsWindowResized())
+    if(IsWindowResized()) {
         ClearBackground(BLACK);
+        adjust_scales();
+    }
 
-    DrawTextureEx(display_texture, position, 0.0f, span, WHITE);
+    DrawTextureEx(display_texture, screen_position, 0.0f, screen_scale, WHITE);
 
     EndDrawing();
 }
@@ -218,4 +227,6 @@ void I_InitGraphics()
         p->b = 0xFF;
         p->a = 0xFF;
     }
+
+    adjust_scales();
 }
