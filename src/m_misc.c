@@ -470,16 +470,16 @@ void M_ScreenShot (void)
     
     // find a file name to save it to
     strcpy(lbmname,"DOOM00.pcx");
-		
+
     for (i=0 ; i<=99 ; i++)
     {
-	lbmname[4] = i/10 + '0';
-	lbmname[5] = i%10 + '0';
-	if( !FileExists(lbmname) )
-	    break;	// file doesn't exist
+        lbmname[4] = i/10 + '0';
+        lbmname[5] = i%10 + '0';
+        if( !FileExists(lbmname) )
+            break;	// file doesn't exist
     }
     if (i==100)
-	I_Error ("M_ScreenShot: Couldn't create a PCX");
+        I_Error ("M_ScreenShot: Couldn't create a PCX");
     
     // save the pcx file
     WritePCXfile (lbmname, linear,
