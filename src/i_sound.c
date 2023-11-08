@@ -226,6 +226,40 @@ void I_UnRegisterSong(d_int handle)
 
 d_int I_RegisterSong(void* data)
 {
+    void* data_head = data;
+    d_ushort song_length = 0;
+    d_ushort song_offset = 0;
+    d_ushort primary_channel_amount = 0;
+    d_ushort second_channel_amount = 0;
+    d_ushort instrument_amount = 0;
+    byte magic[4];
+
+    magic[0] = *(byte*)(data_head++);
+    magic[1] = *(byte*)(data_head++);
+    magic[2] = *(byte*)(data_head++);
+    magic[3] = *(byte*)(data_head++);
+
+    song_length = SHORT( *(d_ushort*)data_head );
+    data_head += sizeof(d_ushort);
+    song_offset = SHORT( *(d_ushort*)data_head );
+    data_head += sizeof(d_ushort);
+    primary_channel_amount = SHORT( *(d_ushort*)data_head );
+    data_head += sizeof(d_ushort);
+    second_channel_amount = SHORT( *(d_ushort*)data_head );
+    data_head += sizeof(d_ushort);
+    instrument_amount = SHORT( *(d_ushort*)data_head );
+    data_head += sizeof(d_ushort);
+
+    printf( "I_RegisterSong\n"
+        "   Magic%c%c%c, 0x%x,\n"
+        "   Length bytes %d,\n"
+        "   Offset 0x%x,\n"
+        "   Primary Channel Amount %d,\n"
+        "   Secondary Channel Amount %d,\n"
+        "   Instrument Amount %d\n",
+        magic[0], magic[1], magic[2], magic[3], song_length, song_offset,
+        primary_channel_amount, second_channel_amount, instrument_amount );
+
     return 1;
 }
 
