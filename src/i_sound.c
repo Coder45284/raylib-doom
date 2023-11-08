@@ -45,17 +45,11 @@
 #define SFX_BITS_PER_CHANNEL  SFX_BYTES_PER_CHANNEL * 8
 #define SFX_SAMPLE_RATE       11025 // Hz
 
-// Treat this as audio_streams.
-struct sfxaudiostream_struct {
-    AudioStream audio_stream;
-    unsigned int length;
-};
+Sound sfx_audios[NUMSFX];
+d_uint sfx_audio_amount = 0;
+Sound* sfx_audio_table[NUMSFX];
 
-typedef struct sfxaudiostream_struct sfxaudiostream_t;
-
-sfxaudiostream_t sfx_audio_table[NUMSFX];
-
-void* getsfx( d_char* sfxname, sfxaudiostream_t* astream ) {
+void* getsfx( d_char* sfxname, Sound* sfxsound ) {
     unsigned char*      sfx;
     d_int  sfxlump;
     d_int  size;
@@ -74,12 +68,12 @@ void* getsfx( d_char* sfxname, sfxaudiostream_t* astream ) {
 
     SetAudioStreamBufferSizeDefault( size );
 
-    astream->audio_stream = LoadAudioStream( SFX_SAMPLE_RATE, SFX_BITS_PER_CHANNEL, SFX_CHANNELS);
-    astream->length = size;
+    sfxsound->stream = LoadAudioStream( SFX_SAMPLE_RATE, SFX_BITS_PER_CHANNEL, SFX_CHANNELS);
+    sfxsound->frameCount = size;
 
     printf( "%s %i %i\n", name, sfxlump, size );
 
-    UpdateAudioStream(astream->audio_stream, sfx, size);
+    UpdateAudioStream(sfxsound->stream, sfx, size);
 
     return sfx;
 }
@@ -119,7 +113,8 @@ d_int I_GetSfxLumpNum(sfxinfo_t* sfx)
 
 d_int I_StartSound (d_int id, d_int vol, d_int sep, d_int pitch, d_int priority)
 {
-    PlayAudioStream( sfx_audio_table[id].audio_stream );
+    PlaySound( *sfx_audio_table[id] );
+
     return id;
 }
 
@@ -127,17 +122,13 @@ d_int I_StartSound (d_int id, d_int vol, d_int sep, d_int pitch, d_int priority)
 
 void I_StopSound (d_int handle)
 {
-  // You need the handle returned by StartSound.
-  // Would be looping all channels,
-  //  tracking down the handle,
-  //  an setting the channel to zero.
+    StopSound( *sfx_audio_table[handle] );
 }
 
 
 d_int I_SoundIsPlaying(d_int handle)
 {
-    // Ouch.
-    return gametic < handle;
+    return IsSoundPlaying( *sfx_audio_table[handle] );
 }
 
 //
@@ -192,13 +183,15 @@ void I_InitSound()
         if (!S_sfx[i].link)
         {
             // Load data from WAD file.
-            S_sfx[i].data = getsfx( S_sfx[i].name, &sfx_audio_table[i] );
+            S_sfx[i].data = getsfx( S_sfx[i].name, &sfx_audios[sfx_audio_amount] );
+            sfx_audio_table[i] = &sfx_audios[sfx_audio_amount];
+            sfx_audio_amount++;
         }
         else
         {
             // Previously loaded already?
             S_sfx[i].data = S_sfx[i].link->data;
-            sfx_audio_table[i].length = sfx_audio_table[(S_sfx[i].link - S_sfx)/sizeof(sfxinfo_t)].length;
+            sfx_audio_table[i] = &sfx_audios[(S_sfx[i].link - S_sfx)/sizeof(sfxinfo_t)];
         }
     }
 }
