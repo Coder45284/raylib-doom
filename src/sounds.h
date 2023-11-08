@@ -26,38 +26,38 @@
 //
 // SoundFX struct.
 //
-typedef struct sfxinfo_struct	sfxinfo_t;
+typedef struct sfxinfo_struct sfxinfo_t;
 
 struct sfxinfo_struct
 {
     // up to 6-character name
-    char*	name;
+    char* name;
 
     // Sfx singularity (only one at a time)
-    int		singularity;
+    int singularity;
 
     // Sfx priority
-    int		priority;
+    int priority;
 
     // referenced sound if a link
-    sfxinfo_t*	link;
+    sfxinfo_t* link;
 
     // pitch if a link
-    int		pitch;
+    int pitch;
 
     // volume if a link
-    int		volume;
+    int volume;
 
     // sound data
-    void*	data;
+    void* data;
 
     // this is checked every second to see if sound
     // can be thrown out (if 0, then decrement, if -1,
     // then throw out, if > 0, then it is in use)
-    int		usefulness;
+    int usefulness;
 
     // lump number of sfx
-    int		lumpnum;		
+    int lumpnum;
 };
 
 
@@ -69,13 +69,13 @@ struct sfxinfo_struct
 typedef struct
 {
     // up to 6-character name
-    char*	name;
+    char* name;
 
     // lump number of music
-    int		lumpnum;
+    int lumpnum;
     
     // music data
-    void*	data;
+    void* data;
 
     // music handle once registered
     int handle;
@@ -86,10 +86,10 @@ typedef struct
 
 
 // the complete set of sound effects
-extern sfxinfo_t	S_sfx[];
+extern sfxinfo_t S_sfx[];
 
 // the complete set of music
-extern musicinfo_t	S_music[];
+extern musicinfo_t S_music[];
 
 //
 // Identifiers for all music in game.

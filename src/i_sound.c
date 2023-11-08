@@ -38,101 +38,69 @@
 
 #include "doomdef.h"
 
-// The number of internal mixing channels,
-//  the samples calculated for each mixing step,
-//  the size of the 16bit, 2 hardware channel (stereo)
-//  mixing buffer, and the samplerate of the raw data.
+#include "raylib.h"
 
+#define SFX_CHANNELS          1
+#define SFX_BYTES_PER_CHANNEL 1
+#define SFX_BITS_PER_CHANNEL  SFX_BYTES_PER_CHANNEL * 8
+#define SFX_SAMPLE_RATE       11025 // Hz
 
-// Needed for calling the actual sound output.
-#define SAMPLECOUNT   512
-#define NUM_CHANNELS  8
-// It is 2 for 16bit, and 2 for two channels.
-#define BUFMUL        4
-#define MIXBUFFERSIZE (SAMPLECOUNT*BUFMUL)
+// Treat this as audio_streams.
+struct sfxaudiostream_struct {
+    AudioStream audio_stream;
+    unsigned int length;
+};
 
-#define SAMPLERATE    11025	// Hz
-#define SAMPLESIZE    2   	// 16bit
+typedef struct sfxaudiostream_struct sfxaudiostream_t;
 
-// The actual lengths of all sound effects.
-d_int lengths[NUMSFX];
+sfxaudiostream_t sfx_audio_table[NUMSFX];
 
-// The global mixing buffer.
-// Basically, samples from all active internal channels
-//  are modifed and added, and stored in the buffer
-//  that is submitted to the audio device.
-d_short mixbuffer[MIXBUFFERSIZE];
+void* getsfx( d_char* sfxname, sfxaudiostream_t* astream ) {
+    unsigned char*      sfx;
+    d_int  sfxlump;
+    d_int  size;
+    d_char name[20];
 
+    snprintf(name, 20, "ds%s", sfxname);
 
-// The channel step amount...
-d_uint channelstep[NUM_CHANNELS];
-// ... and a 0.16 bit remainder of last step.
-d_uint channelstepremainder[NUM_CHANNELS];
+    if ( W_CheckNumForName(name) == -1 )
+        sfxlump = W_GetNumForName("dspistol");
+    else
+        sfxlump = W_GetNumForName(name);
 
+    size = W_LumpLength( sfxlump );
 
-// The channel data pointers, start and end.
-byte*	channels[NUM_CHANNELS];
-byte*	channelsend[NUM_CHANNELS];
+    sfx = (unsigned char*)W_CacheLumpNum( sfxlump, PU_STATIC );
 
+    SetAudioStreamBufferSizeDefault( size );
 
-// Time/gametic that the channel started playing,
-//  used to determine oldest, which automatically
-//  has lowest priority.
-// In case number of active sounds exceeds
-//  available channels.
-d_uint		channelstart[NUM_CHANNELS];
+    astream->audio_stream = LoadAudioStream( SFX_SAMPLE_RATE, SFX_BITS_PER_CHANNEL, SFX_CHANNELS);
+    astream->length = size;
 
-// The sound in channel handles,
-//  determined on registration,
-//  might be used to unregister/stop/modify,
-//  currently unused.
-d_uint 		channelhandles[NUM_CHANNELS];
+    printf( "%s %i %i\n", name, sfxlump, size );
 
-// SFX id of the playing sound effect.
-// Used to catch duplicates (like chainsaw).
-d_uint		channelids[NUM_CHANNELS];
+    UpdateAudioStream(astream->audio_stream, sfx, size);
 
-// Pitch to stepping lookup, unused.
-d_uint		steptable[256];
+    return sfx;
+}
 
-// Volume lookups.
-d_uint		vol_lookup[128*256];
-
-// Hardware left and right channel volume lookup.
-d_uint*		channelleftvol_lookup[NUM_CHANNELS];
-d_uint*		channelrightvol_lookup[NUM_CHANNELS];
-
-//
-// SFX API
-// Note: this was called by S_Init.
-// However, whatever they did in the
-// old DPMS based DOS version, this
-// were simply dummies in the Linux
-// version.
-// See soundserver initdata().
-//
 void I_SetChannels()
 {
-}	
+}
 
  
 void I_SetSfxVolume(d_uint volume)
 {
-  // Identical to DOS.
-  // Basically, this should propagate
-  //  the menu/config file setting
-  //  to the state variable used in
-  //  the mixing.
-  snd_SfxVolume = volume;
+    snd_SfxVolume = volume;
 }
 
 // MUSIC API - dummy. Some code from DOS version.
 void I_SetMusicVolume(d_uint volume)
 {
-  // Internal state variable.
-  snd_MusicVolume = volume;
-  // Now set volume on output device.
-  // Whatever( snd_MusciVolume );
+    // Internal state variable.
+    snd_MusicVolume = volume;
+    // Now set volume on output device.
+    // Whatever( snd_MusciVolume );
 }
 
 
@@ -143,30 +111,16 @@ void I_SetMusicVolume(d_uint volume)
 d_int I_GetSfxLumpNum(sfxinfo_t* sfx)
 {
     char namebuf[9];
-    sprintf(namebuf, "ds%s", sfx->name);
+
+    snprintf(namebuf, 9, "ds%s", sfx->name);
+
     return W_GetNumForName(namebuf);
 }
 
-//
-// Starting a sound means adding it
-//  to the current list of active sounds
-//  in the internal channels.
-// As the SFX info struct contains
-//  e.g. a pointer to the raw data,
-//  it is ignored.
-// As our sound handling does not handle
-//  priority, it is ignored.
-// Pitching (that is, increased speed of playback)
-//  is set, but currently not used by mixing.
-//
-d_int
-I_StartSound
-( d_int		id,
-  d_int		vol,
-  d_int		sep,
-  d_int		pitch,
-  d_int		priority )
+d_int I_StartSound (d_int id, d_int vol, d_int sep, d_int pitch, d_int priority)
 {
+    PlayAudioStream( sfx_audio_table[id].audio_stream );
+    return id;
 }
 
 
@@ -182,7 +136,6 @@ void I_StopSound (d_int handle)
 
 d_int I_SoundIsPlaying(d_int handle)
 {
-  return 0;
     // Ouch.
     return gametic < handle;
 }
@@ -221,11 +174,33 @@ void I_UpdateSoundParams( d_int handle, d_int vol, d_int sep, d_int pitch )
 }
 
 void I_ShutdownSound(void)
-{    
+{
+    if( IsAudioDeviceReady() )
+        CloseAudioDevice();
 }
 
 void I_InitSound()
 {
+    InitAudioDevice();
+
+    // Initialize external data (all sounds) at start, keep static.
+    fprintf( stderr, "I_InitSound: ");
+
+    for( d_int i = 1; i < NUMSFX; i++ )
+    {
+        // Alias? Example is the chaingun sound linked to pistol.
+        if (!S_sfx[i].link)
+        {
+            // Load data from WAD file.
+            S_sfx[i].data = getsfx( S_sfx[i].name, &sfx_audio_table[i] );
+        }
+        else
+        {
+            // Previously loaded already?
+            S_sfx[i].data = S_sfx[i].link->data;
+            sfx_audio_table[i].length = sfx_audio_table[(S_sfx[i].link - S_sfx)/sizeof(sfxinfo_t)].length;
+        }
+    }
 }
 
 //

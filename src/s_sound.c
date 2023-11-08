@@ -469,11 +469,11 @@ void S_StopSound(void *origin)
 
     for (cnum=0 ; cnum<numChannels ; cnum++)
     {
-	if (channels[cnum].sfxinfo && channels[cnum].origin == origin)
-	{
-	    S_StopChannel(cnum);
-	    break;
-	}
+        if (channels[cnum].sfxinfo && channels[cnum].origin == origin)
+        {
+            S_StopChannel(cnum);
+            break;
+        }
     }
 }
 
