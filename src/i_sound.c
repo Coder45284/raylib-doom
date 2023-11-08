@@ -54,6 +54,7 @@ void* getsfx( d_char* sfxname, Sound* sfxsound ) {
     d_int  sfxlump;
     d_int  size;
     d_char name[20];
+    Wave wave;
 
     snprintf(name, 20, "ds%s", sfxname);
 
@@ -66,14 +67,15 @@ void* getsfx( d_char* sfxname, Sound* sfxsound ) {
 
     sfx = (unsigned char*)W_CacheLumpNum( sfxlump, PU_STATIC );
 
-    SetAudioStreamBufferSizeDefault( size );
+    wave.frameCount = size / (SFX_BYTES_PER_CHANNEL * SFX_CHANNELS);
+    wave.sampleRate = SFX_SAMPLE_RATE;
+    wave.sampleSize = SFX_BITS_PER_CHANNEL;
+    wave.channels   = SFX_CHANNELS;
+    wave.data = sfx;
 
-    sfxsound->stream = LoadAudioStream( SFX_SAMPLE_RATE, SFX_BITS_PER_CHANNEL, SFX_CHANNELS);
-    sfxsound->frameCount = size;
+    *sfxsound = LoadSoundFromWave( wave );
 
     printf( "%s %i %i\n", name, sfxlump, size );
-
-    UpdateAudioStream(sfxsound->stream, sfx, size);
 
     return sfx;
 }
@@ -131,19 +133,6 @@ d_int I_SoundIsPlaying(d_int handle)
     return IsSoundPlaying( *sfx_audio_table[handle] );
 }
 
-//
-// This function loops all active (internal) sound
-//  channels, retrieves a given number of samples
-//  from the raw sound data, modifies it according
-//  to the current (internal) channel parameters,
-//  mixes the per channel samples into the global
-//  mixbuffer, clamping it to the allowed range,
-//  and sets up everything for transferring the
-//  contents of the mixbuffer to the (two)
-//  hardware channels (left and right, that is).
-//
-// This function currently supports only 16bit.
-//
 void I_UpdateSound( void )
 {
 }
