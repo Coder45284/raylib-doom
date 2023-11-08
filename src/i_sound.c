@@ -75,8 +75,6 @@ void* getsfx( d_char* sfxname, Sound* sfxsound ) {
 
     *sfxsound = LoadSoundFromWave( wave );
 
-    printf( "%s %i %i\n", name, sfxlump, size );
-
     return sfx;
 }
 
@@ -147,6 +145,11 @@ void I_UpdateSoundParams( d_int handle, d_int vol, d_int sep, d_int pitch )
 
 void I_ShutdownSound(void)
 {
+    // Clean up all the audio data.
+    for( d_int i = 0; i < sfx_audio_amount; i++ )
+        UnloadSound( sfx_audios[i] );
+    sfx_audio_amount = 0;
+
     if( IsAudioDeviceReady() )
         CloseAudioDevice();
 }
