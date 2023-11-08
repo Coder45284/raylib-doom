@@ -116,9 +116,7 @@ d_int I_GetSfxLumpNum(sfxinfo_t* sfx)
 d_int I_StartSound (d_int id, d_int vol, d_int sep, d_int pitch, d_int priority)
 {
     PlaySound( *sfx_audio_table[id] );
-    SetSoundVolume( *sfx_audio_table[id], vol * (1.0/15.0) );
-    SetSoundPitch( *sfx_audio_table[id], PITCH_MATH( 0.5, pitch ) );
-    SetSoundPan( *sfx_audio_table[id], 1.0 - sep * (1.0/255.0));
+    I_UpdateSoundParams( id, vol, sep, pitch );
     return id;
 }
 
@@ -143,8 +141,11 @@ void I_SubmitSound(void)
 {
 }
 
-void I_UpdateSoundParams( d_int handle, d_int vol, d_int sep, d_int pitch )
+void I_UpdateSoundParams( d_int id, d_int vol, d_int sep, d_int pitch )
 {
+    SetSoundVolume( *sfx_audio_table[id], vol * (1.0/15.0) );
+    SetSoundPitch( *sfx_audio_table[id], PITCH_MATH( 0.5, pitch ) );
+    SetSoundPan( *sfx_audio_table[id], 1.0 - sep * (1.0/255.0));
 }
 
 void I_ShutdownSound(void)
