@@ -147,7 +147,7 @@ void I_SubmitSound(void)
 
 #define PITCH_LEVEL_FUNCTION(min_pitch, pitch) (2.0 / 255.0) * (1.0 - min_pitch) * pitch + min_pitch
 
-void I_UpdateSoundParams( d_int id, d_int vol, d_int sep, d_int pitch )
+void I_UpdateSoundParams(d_int id, d_int vol, d_int sep, d_int pitch)
 {
     SetSoundVolume( *sfx_audio_table[id], vol * (1.0/15.0) );
     SetSoundPitch( *sfx_audio_table[id], PITCH_LEVEL_FUNCTION( 0.5, pitch ) );
@@ -239,21 +239,20 @@ d_int I_QrySongPlaying(d_int handle)
 // Interrupt handler.
 void I_HandleSoundTimer( d_int ignore )
 {
-  // TODO Add sound.
-  // UNUSED, but required.
-  ignore = 0;
-  return;
+    // UNUSED, but required.
+    ignore = 0;
+    return;
 }
 
 // Get the interrupt. Set duration in millisecs.
 d_int I_SoundSetTimer( d_int duration_of_tick )
 {
-  // TODO Add sound.
+    return 0; // There is no need for a timer.
 }
 
 
 // Remove the interrupt. Set duration to zero.
 void I_SoundDelTimer()
 {
-  // TODO Add sound.
+    // No interupt to delete.
 }
