@@ -115,7 +115,9 @@ d_int I_StartSound (d_int id, d_int vol, d_int sep, d_int pitch, d_int priority)
 {
     PlaySound( *sfx_audio_table[id] );
     SetSoundVolume( *sfx_audio_table[id], vol * (1.0/15.0) );
-    SetSoundPitch( *sfx_audio_table[id], pitch * (1.0/255.0) );
+    SetSoundPitch( *sfx_audio_table[id], (15.0 / 2048.0) * pitch + (1.0 / 16.0) );
+
+    printf( "pitch = %i\n", pitch );
 
     return id;
 }
