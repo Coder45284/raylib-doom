@@ -518,33 +518,29 @@ void S_StartMusic(int m_id)
     S_ChangeMusic(m_id, false);
 }
 
-void
-S_ChangeMusic
-( int			musicnum,
-  int			looping )
+void S_ChangeMusic( int musicnum, int looping )
 {
-    musicinfo_t*	music;
-    char		namebuf[9];
+    musicinfo_t* music;
+    char         namebuf[9];
 
-    if ( (musicnum <= mus_None)
-	 || (musicnum >= NUMMUSIC) )
+    if( (musicnum <= mus_None) || (musicnum >= NUMMUSIC) )
     {
-	I_Error("Bad music number %d", musicnum);
+        I_Error("Bad music number %d", musicnum);
     }
     else
-	music = &S_music[musicnum];
+        music = &S_music[musicnum];
 
-    if (mus_playing == music)
-	return;
+    if(mus_playing == music)
+        return;
 
     // shutdown old music
     S_StopMusic();
 
     // get lumpnum if neccessary
-    if (!music->lumpnum)
+    if(!music->lumpnum)
     {
-	sprintf(namebuf, "d_%s", music->name);
-	music->lumpnum = W_GetNumForName(namebuf);
+        sprintf(namebuf, "d_%s", music->name);
+        music->lumpnum = W_GetNumForName(namebuf);
     }
 
     // load & register it
