@@ -111,8 +111,6 @@ d_int I_GetSfxLumpNum(sfxinfo_t* sfx)
     return W_GetNumForName(namebuf);
 }
 
-#define PITCH_MATH(min_pitch, pitch) (2.0 / 255.0) * (1 - min_pitch) * pitch + min_pitch
-
 d_int I_StartSound (d_int id, d_int vol, d_int sep, d_int pitch, d_int priority)
 {
     PlaySound( *sfx_audio_table[id] );
@@ -141,10 +139,12 @@ void I_SubmitSound(void)
 {
 }
 
+#define PITCH_LEVEL_FUNCTION(min_pitch, pitch) (2.0 / 255.0) * (1.0 - min_pitch) * pitch + min_pitch
+
 void I_UpdateSoundParams( d_int id, d_int vol, d_int sep, d_int pitch )
 {
     SetSoundVolume( *sfx_audio_table[id], vol * (1.0/15.0) );
-    SetSoundPitch( *sfx_audio_table[id], PITCH_MATH( 0.5, pitch ) );
+    SetSoundPitch( *sfx_audio_table[id], PITCH_LEVEL_FUNCTION( 0.5, pitch ) );
     SetSoundPan( *sfx_audio_table[id], 1.0 - sep * (1.0/255.0));
 }
 
