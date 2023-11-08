@@ -69,19 +69,8 @@ void I_StartFrame()
 {
 }
 
-static bool i_events_remaining;
-
 void I_GetEvent()
 {
-    event_t event;
-
-    int keycode_pressed = GetKeyPressed();
-
-    if(keycode_pressed == KEY_NULL) {
-        i_events_remaining = false;
-    }
-    else
-        printf( "Keycode = %i\n", keycode_pressed );
 }
 
 #define KEYMAP( RL_KEY, D_KEY )\
@@ -101,13 +90,29 @@ void I_StartTic()
 {
     event_t event;
 
+
     if( WindowShouldClose() ) {
         I_Quit();
     }
 
-    //i_events_remaining = true;
-    //while( i_events_remaining )
-        //I_GetEvent();
+    Vector2 mouse_delta = GetMouseDelta();
+    int mouse_button_left = IsMouseButtonPressed( MOUSE_BUTTON_LEFT );
+    int mouse_button_right = IsMouseButtonPressed( MOUSE_BUTTON_RIGHT );
+    int mouse_button_middle = IsMouseButtonPressed( MOUSE_BUTTON_MIDDLE );
+
+    if( mouse_delta.x != 0.0 || mouse_delta.y != 0.0 || // If mouse has moved
+        mouse_button_left || mouse_button_right || mouse_button_middle )
+    {
+        event.type = ev_mouse;
+        event.data1 = 0;
+        event.data1 |= mouse_button_left   << 0;
+        event.data1 |= mouse_button_right  << 1;
+        event.data1 |= mouse_button_middle << 2;
+        event.data2 = mouse_delta.x;
+        event.data3 = -mouse_delta.y;
+        D_PostEvent(&event);
+    }
+
 
     KEYMAP( KEY_RIGHT,  D_KEY_RIGHTARROW )
     KEYMAP( KEY_LEFT,   D_KEY_LEFTARROW )
@@ -291,4 +296,6 @@ void I_InitGraphics()
     }
 
     adjust_scales();
+
+    DisableCursor();
 }
