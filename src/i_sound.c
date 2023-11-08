@@ -111,13 +111,16 @@ d_int I_GetSfxLumpNum(sfxinfo_t* sfx)
     return W_GetNumForName(namebuf);
 }
 
+#define PITCH_MATH(min_pitch, pitch) (2.0 / 255.0) * (1 - min_pitch) * pitch + min_pitch
+
 d_int I_StartSound (d_int id, d_int vol, d_int sep, d_int pitch, d_int priority)
 {
     PlaySound( *sfx_audio_table[id] );
     SetSoundVolume( *sfx_audio_table[id], vol * (1.0/15.0) );
-    SetSoundPitch( *sfx_audio_table[id], (15.0 / 2048.0) * pitch + (1.0 / 16.0) );
+    SetSoundPitch( *sfx_audio_table[id], PITCH_MATH( 0.5, pitch ) );
 
-    printf( "pitch = %i\n", pitch );
+    printf( "vol   = %i %f\n", vol,   (1.0/15.0) );
+    printf( "pitch = %i %f\n", pitch, PITCH_MATH( 0.5, pitch ) );
 
     return id;
 }
