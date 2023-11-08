@@ -34,6 +34,7 @@
 #include "i_sound.h"
 #include "m_argv.h"
 #include "m_misc.h"
+#include "m_swap.h"
 #include "w_wad.h"
 
 #include "doomdef.h"
@@ -44,17 +45,18 @@
 #define SFX_BYTES_PER_CHANNEL 1
 #define SFX_BITS_PER_CHANNEL  SFX_BYTES_PER_CHANNEL * 8
 #define SFX_SAMPLE_RATE       11025 // Hz
+#define SFX_PADDED_BYTES      16
 
 Sound sfx_audios[NUMSFX];
 d_uint sfx_audio_amount = 0;
 Sound* sfx_audio_table[NUMSFX];
 
 void* getsfx( d_char* sfxname, Sound* sfxsound ) {
-    unsigned char*      sfx;
+    byte*  sfx;
     d_int  sfxlump;
     d_int  size;
     d_char name[20];
-    Wave wave;
+    Wave   wave;
 
     snprintf(name, 20, "ds%s", sfxname);
 
@@ -67,11 +69,15 @@ void* getsfx( d_char* sfxname, Sound* sfxsound ) {
 
     sfx = (unsigned char*)W_CacheLumpNum( sfxlump, PU_STATIC );
 
-    wave.frameCount = size / (SFX_BYTES_PER_CHANNEL * SFX_CHANNELS);
-    wave.sampleRate = SFX_SAMPLE_RATE;
+    d_ushort header_number  = SHORT( *(d_ushort*)(sfx + 0) );
+    d_ushort sample_rate_hz = SHORT( *(d_ushort*)(sfx + 1 * sizeof(d_short)) );
+    d_ulong  padded_samples = LONG(  *(d_ulong*)( sfx + 2 * sizeof(d_short)) );
+
+    wave.frameCount = (padded_samples - 2 * SFX_PADDED_BYTES) / (SFX_BYTES_PER_CHANNEL * SFX_CHANNELS);
+    wave.sampleRate = sample_rate_hz;
     wave.sampleSize = SFX_BITS_PER_CHANNEL;
     wave.channels   = SFX_CHANNELS;
-    wave.data = sfx;
+    wave.data       = sfx + 2 * sizeof(d_short) + sizeof(d_ulong) + SFX_PADDED_BYTES;
 
     *sfxsound = LoadSoundFromWave( wave );
 
