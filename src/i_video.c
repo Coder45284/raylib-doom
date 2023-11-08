@@ -96,18 +96,17 @@ void I_StartTic()
     }
 
     Vector2 mouse_delta = GetMouseDelta();
-    int mouse_button_left = IsMouseButtonPressed( MOUSE_BUTTON_LEFT );
-    int mouse_button_right = IsMouseButtonPressed( MOUSE_BUTTON_RIGHT );
-    int mouse_button_middle = IsMouseButtonPressed( MOUSE_BUTTON_MIDDLE );
 
     if( mouse_delta.x != 0.0 || mouse_delta.y != 0.0 || // If mouse has moved
-        mouse_button_left || mouse_button_right || mouse_button_middle )
+        IsMouseButtonPressed( MOUSE_BUTTON_LEFT   ) || IsMouseButtonReleased( MOUSE_BUTTON_LEFT   ) ||
+        IsMouseButtonPressed( MOUSE_BUTTON_RIGHT  ) || IsMouseButtonReleased( MOUSE_BUTTON_RIGHT  ) ||
+        IsMouseButtonPressed( MOUSE_BUTTON_MIDDLE ) || IsMouseButtonReleased( MOUSE_BUTTON_MIDDLE ) )
     {
         event.type = ev_mouse;
         event.data1 = 0;
-        event.data1 |= mouse_button_left   << 0;
-        event.data1 |= mouse_button_right  << 1;
-        event.data1 |= mouse_button_middle << 2;
+        event.data1 |= IsMouseButtonDown( MOUSE_BUTTON_LEFT )   << 0;
+        event.data1 |= IsMouseButtonDown( MOUSE_BUTTON_RIGHT )  << 1;
+        event.data1 |= IsMouseButtonDown( MOUSE_BUTTON_MIDDLE ) << 2;
         event.data2 = mouse_delta.x;
         event.data3 = -mouse_delta.y;
         D_PostEvent(&event);
