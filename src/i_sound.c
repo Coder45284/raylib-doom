@@ -67,7 +67,7 @@ void* getsfx( d_char* sfxname, Sound* sfxsound ) {
 
     size = W_LumpLength( sfxlump );
 
-    sfx = (unsigned char*)W_CacheLumpNum( sfxlump, PU_STATIC );
+    sfx = (byte*)W_CacheLumpNum( sfxlump, PU_STATIC );
 
     d_ushort header_number  = SHORT( *(d_ushort*)(sfx + 0) );
     d_ushort sample_rate_hz = SHORT( *(d_ushort*)(sfx + 1 * sizeof(d_short)) );
@@ -226,13 +226,13 @@ void I_UnRegisterSong(d_int handle)
 
 d_int I_RegisterSong(void* data)
 {
-  return 1;
+    return 1;
 }
 
 // Is the song playing?
 d_int I_QrySongPlaying(d_int handle)
 {
-  return false;
+    return false;
 }
 
 
