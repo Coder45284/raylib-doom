@@ -137,14 +137,6 @@ void I_UpdateSound( void )
 {
 }
 
-// 
-// This would be used to write out the mixbuffer
-//  during each game loop update.
-// Updates sound buffer and audio device at runtime. 
-// It is called during Timer interrupt with SNDINTR.
-// Mixing now done synchronous, and
-//  only output be done asynchronous?
-//
 void I_SubmitSound(void)
 {
 }
