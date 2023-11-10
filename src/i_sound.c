@@ -345,7 +345,6 @@ d_int I_RegisterSong(void* data)
     d_short midi_channel    = 0;
     byte    midi_parameter1 = 0;
     byte    midi_parameter2 = 0;
-    boolean write_chunk = true;
 
     for( d_int i = 0; i < song_length; ) {
         byte info = *(byte*)(data + song_offset + i);
@@ -371,6 +370,8 @@ d_int I_RegisterSong(void* data)
                     midi_event = 0x8;
                     midi_parameter1 = note_number;
                     midi_parameter2 = 127; // max velocity.
+
+                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
                 }
                 break;
             case 1: // Play Note
@@ -396,6 +397,8 @@ d_int I_RegisterSong(void* data)
                     midi_event = 0x9;
                     midi_parameter1 = note_number;
                     midi_parameter2 = volume; // maybe this affects the volume.
+
+                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
                 }
                 break;
             case 2: // Pitch Bend
@@ -409,6 +412,8 @@ d_int I_RegisterSong(void* data)
                     midi_event = 0xe;
                     midi_parameter1 = (pitch_bend_long >> 0) & 0x7F;
                     midi_parameter2 = (pitch_bend_long >> 7) & 0x7F;
+
+                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
                 }
                 break;
             case 3: // System Event
@@ -420,6 +425,8 @@ d_int I_RegisterSong(void* data)
                     midi_event = 0xb;
                     midi_parameter1 = mus_to_midi[controller % MUS_TABLE_LIMIT];
                     midi_parameter2 = 0x80;
+
+                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
                 }
                 break;
             case 4: // Controller
@@ -440,6 +447,8 @@ d_int I_RegisterSong(void* data)
                         midi_parameter1 = mus_to_midi[controller % MUS_TABLE_LIMIT];
                         midi_parameter2 = value;
                     }
+
+                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
                 }
                 break;
             default:
@@ -447,14 +456,7 @@ d_int I_RegisterSong(void* data)
                 printf( "file offset 0x%x\n", ftell( midi0 ) );
             case 5:
             case 6:
-                write_chunk = false;
                 break;
-        }
-
-        if( !write_chunk )
-            write_chunk = true;
-        else {
-            write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
         }
 
         d_ulong delay_amount = 0;
