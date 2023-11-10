@@ -224,15 +224,51 @@ void I_UnRegisterSong(d_int handle)
 {
 }
 
+#define WRITE_BSHORT( file, number ) \
+putc( (number >> 8) & 0xFF, file ); \
+putc( (number >> 0) & 0xFF, file );
+
+#define WRITE_BLONG( file, number ) \
+putc( (number >> 24) & 0xFF, file ); \
+putc( (number >> 16) & 0xFF, file ); \
+putc( (number >>  8) & 0xFF, file ); \
+putc( (number >>  0) & 0xFF, file );
+
+#define MUS_TABLE_LIMIT 15
+
 d_int I_RegisterSong(void* data)
 {
+    static byte mus_to_midi[MUS_TABLE_LIMIT] = {
+          0, //  0
+          0, //  1
+          1, //  2
+          7, //  3
+         10, //  4
+         11, //  5
+         91, //  6
+         93, //  7
+         64, //  8
+         67, //  9
+        120, // 10
+        123, // 11
+        126, // 12
+        127, // 13
+        121, // 14
+    };
+
     void* data_head = data;
     d_ushort song_length = 0;
     d_ushort song_offset = 0;
     d_ushort primary_channel_amount = 0;
     d_ushort second_channel_amount = 0;
     d_ushort instrument_amount = 0;
+    byte channel_last_volumes[16];
     byte magic[4];
+
+    // Initialize volumes.
+    for( int i = 0; i < 16; i++ ) {
+        channel_last_volumes[i] = 0;
+    }
 
     magic[0] = *(byte*)(data_head++);
     magic[1] = *(byte*)(data_head++);
@@ -260,7 +296,30 @@ d_int I_RegisterSong(void* data)
         magic[0], magic[1], magic[2], magic[3], song_length, song_offset,
         primary_channel_amount, second_channel_amount, instrument_amount );
 
+    FILE* midi0 = fopen("song.mid", "wb");
+
     printf( "   MUS Track\n" );
+
+    // Write Header Chunk
+    fwrite( "MThd", 1, 4, midi0 );
+    WRITE_BLONG(  midi0, 6 );
+    WRITE_BSHORT( midi0, 0 );
+    WRITE_BSHORT( midi0, 1 );
+    WRITE_BSHORT( midi0, 140 );
+
+    // Write Track Chunk
+    fwrite( "MTrk", 1, 4, midi0 );
+    long midi_size_pos = ftell( midi0 );
+    WRITE_BLONG( midi0, 0 ); // This is the size.
+
+    // Event variables.
+    byte*   midi_delta_time = NULL;
+    d_short midi_event      = 0;
+    d_short midi_channel    = 0;
+    byte    midi_parameter1 = 0;
+    byte    midi_parameter2 = 0;
+    boolean write_chunk = true;
+
     for( d_int i = 0; i < song_length; ) {
         byte info = *(byte*)(data + song_offset + i);
 
@@ -268,17 +327,23 @@ d_int I_RegisterSong(void* data)
         d_uint type    = (info & 0x70) >> 4;
         d_uint channel = (info & 0x0F);
 
+        midi_channel = channel;
+
         // Info has been read.
         i++;
 
-        printf( "type = %i; channel = %i; ", type, channel );
+        //printf( "type = %i; channel = %i; ", type, channel );
 
         switch( type ) {
             case 0: // Release Note
                 {
                     d_uint note_number = *(byte*)(data + song_offset + i) & 0x7F;
                     i++;
-                    printf( "silence; note_number = %i;\n", note_number );
+                    //printf( "silence; note_number = %i;\n", note_number );
+
+                    midi_event = 0x8;
+                    midi_parameter1 = note_number;
+                    midi_parameter2 = 127; // max velocity.
                 }
                 break;
             case 1: // Play Note
@@ -292,27 +357,42 @@ d_int I_RegisterSong(void* data)
 
                     if( volume_enable ) {
                         volume = *(byte*)(data + song_offset + i) & 0x7F;
-                        printf( "set volume;" );
+                        channel_last_volumes[channel] = volume;
+                        //printf( "set volume;" );
                         i++;
                     }
                     else
-                        volume = 0; // TODO Previous volume of channel
+                        volume = channel_last_volumes[channel];
 
-                    printf( "volume = %i; note_number = %i;\n", volume, note_number );
+                    //printf( "volume = %i; note_number = %i;\n", volume, note_number );
+
+                    midi_event = 0x9;
+                    midi_parameter1 = note_number;
+                    midi_parameter2 = volume; // maybe this affects the volume.
                 }
                 break;
             case 2: // Pitch Bend
                 {
                     byte pitch_bend = *(byte*)(data + song_offset + i);
                     i++;
-                    printf( "pitch_blend = %i;\n", pitch_bend );
+                    //printf( "pitch_blend = %i;\n", pitch_bend );
+
+                    d_ushort pitch_bend_long = pitch_bend * 0x40;
+
+                    midi_event = 0xe;
+                    midi_parameter1 = (pitch_bend_long >> 0) & 0x7F;
+                    midi_parameter2 = (pitch_bend_long >> 7) & 0x7F;
                 }
                 break;
             case 3: // System Event
                 {
                     byte controller = *(byte*)(data + song_offset + i) & 0x7F;
                     i++;
-                    printf( "controller = %i;\n", controller );
+                    //printf( "controller = %i;\n", controller );
+
+                    midi_event = 0xb;
+                    midi_parameter1 = mus_to_midi[controller % MUS_TABLE_LIMIT];
+                    midi_parameter2 = 0x80;
                 }
                 break;
             case 4: // Controller
@@ -321,25 +401,73 @@ d_int I_RegisterSong(void* data)
                     i++;
                     byte value = *(byte*)(data + song_offset + i) & 0x7F;
                     i++;
-                    printf( "controller = %i; value = %i;\n", controller, value );
+                    //printf( "controller = %i; value = %i;\n", controller, value );
+
+                    if( value == 0 ) {
+                        midi_event = 0xc;
+                        midi_parameter1 = value;
+                        midi_parameter2 = 0;
+                    }
+                    else {
+                        midi_event = 0xb;
+                        midi_parameter1 = mus_to_midi[controller % MUS_TABLE_LIMIT];
+                        midi_parameter2 = value;
+                    }
                 }
                 break;
             default:
+                printf( "command not recognized at 0x%x;\n", i );
+                printf( "file offset 0x%x\n", ftell( midi0 ) );
+            case 5:
+            case 6:
+                write_chunk = false;
                 break;
-                    printf( "command not recognized;\n" );
+        }
+
+        if( !write_chunk )
+            write_chunk = true;
+        else {
+            if( midi_delta_time == NULL )
+                putc( 0, midi0 );
+            else {
+                int i = 0;
+
+                while( midi_delta_time[i] & 0x80 != 0 ) {
+                    putc( midi_delta_time[i], midi0 );
+                    i++;
+                }
+                putc( midi_delta_time[i], midi0 );
+
+                midi_delta_time = NULL;
+            }
+            putc( ((midi_event << 4) & 0xF0) | ((midi_channel) & 0x0F), midi0 );
+            putc( midi_parameter1, midi0 );
+            if( midi_parameter2 & 0x80 == 0 )
+                putc( midi_parameter2, midi0 );
         }
 
         d_ulong delay_amount = 0;
+
+        if( last )
+            midi_delta_time = (byte*)(data + song_offset);
 
         while( last ) {
             last = (*(byte*)(data + song_offset + i) & 0x80) != 0;
             delay_amount = delay_amount * 128 + (*(byte*)(data + song_offset + i) & 0x7F);
             i++;
         }
-
-        if( delay_amount != 0 )
-            printf( "delay about %i\n", delay_amount );
     }
+
+    putc( 0xFF, midi0 );
+    putc( 0x2F, midi0 );
+    putc( 0,    midi0 );
+
+    long ending_offset = ftell( midi0 );
+    fseek( midi0, midi_size_pos, SEEK_SET );
+    WRITE_BLONG( midi0, ending_offset - midi_size_pos - 4 );
+
+    fclose( midi0 );
+
     printf( "\n" );
 
     return 1;
