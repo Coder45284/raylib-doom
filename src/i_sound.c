@@ -260,6 +260,88 @@ d_int I_RegisterSong(void* data)
         magic[0], magic[1], magic[2], magic[3], song_length, song_offset,
         primary_channel_amount, second_channel_amount, instrument_amount );
 
+    printf( "   MUS Track\n" );
+    for( d_int i = 0; i < song_length; ) {
+        byte info = *(byte*)(data + song_offset + i);
+
+        bool   last    = (info & 0x80) != 0;
+        d_uint type    = (info & 0x70) >> 4;
+        d_uint channel = (info & 0x0F);
+
+        // Info has been read.
+        i++;
+
+        printf( "type = %i; channel = %i; ", type, channel );
+
+        switch( type ) {
+            case 0: // Release Note
+                {
+                    d_uint note_number = *(byte*)(data + song_offset + i) & 0x7F;
+                    i++;
+                    printf( "silence; note_number = %i;\n", note_number );
+                }
+                break;
+            case 1: // Play Note
+                {
+                    byte             note = *(byte*)(data + song_offset + i);
+                    boolean volume_enable = note & 0x80;
+                    byte      note_number = note & 0x7F;
+                    i++;
+
+                    byte volume;
+
+                    if( volume_enable ) {
+                        volume = *(byte*)(data + song_offset + i) & 0x7F;
+                        printf( "set volume;" );
+                        i++;
+                    }
+                    else
+                        volume = 0; // TODO Previous volume of channel
+
+                    printf( "volume = %i; note_number = %i;\n", volume, note_number );
+                }
+                break;
+            case 2: // Pitch Bend
+                {
+                    byte pitch_bend = *(byte*)(data + song_offset + i);
+                    i++;
+                    printf( "pitch_blend = %i;\n", pitch_bend );
+                }
+                break;
+            case 3: // System Event
+                {
+                    byte controller = *(byte*)(data + song_offset + i) & 0x7F;
+                    i++;
+                    printf( "controller = %i;\n", controller );
+                }
+                break;
+            case 4: // Controller
+                {
+                    byte controller = *(byte*)(data + song_offset + i) & 0x7F;
+                    i++;
+                    byte value = *(byte*)(data + song_offset + i) & 0x7F;
+                    i++;
+                    printf( "controller = %i; value = %i;\n", controller, value );
+                }
+                break;
+            default:
+                break;
+                    printf( "command not recognized;\n" );
+        }
+
+        d_ulong delay_amount = 0;
+
+        while( last ) {
+            last = (*(byte*)(data + song_offset + i) & 0x80) != 0;
+            delay_amount = delay_amount * 128 + (*(byte*)(data + song_offset + i) & 0x7F);
+            i++;
+        }
+
+        if( delay_amount != 0 )
+            printf( "delay about %i\n", delay_amount );
+    }
+    printf( "\n" );
+
     return 1;
 }
 
