@@ -236,31 +236,37 @@ putc( (number >>  0) & 0xFF, file );
 
 #define MUS_TABLE_LIMIT 15
 
+static void write_event_small(
+    FILE*   midi0,
+    d_uint *midi_delta_time,
+    d_short midi_event,
+    d_short midi_channel,
+    byte    midi_parameter1 )
+{
+    if( *midi_delta_time == 0 )
+        putc( 0, midi0 );
+    else {
+        while( *midi_delta_time != 0 ) {
+            putc( *midi_delta_time & 0x7F, midi0 );
+
+            *midi_delta_time = *midi_delta_time >> 7;
+        }
+    }
+    putc( ((midi_event << 4) & 0xF0) | ((midi_channel) & 0x0F), midi0 );
+    putc( midi_parameter1, midi0 );
+}
+
 static void write_event(
     FILE*   midi0,
-    byte**  midi_delta_time,
+    d_uint *midi_delta_time,
     d_short midi_event,
     d_short midi_channel,
     byte    midi_parameter1,
     byte    midi_parameter2)
 {
-    if( *midi_delta_time == NULL )
-        putc( 0, midi0 );
-    else {
-        int i = 0;
+    write_event_small(midi0, midi_delta_time, midi_event, midi_channel, midi_parameter1);
 
-        while( *midi_delta_time[i] & 0x80 != 0 ) {
-            putc( *midi_delta_time[i], midi0 );
-            i++;
-        }
-        putc( *midi_delta_time[i], midi0 );
-
-        *midi_delta_time = NULL;
-    }
-    putc( ((midi_event << 4) & 0xF0) | ((midi_channel) & 0x0F), midi0 );
-    putc( midi_parameter1, midi0 );
-    if( midi_parameter2 & 0x80 == 0 )
-        putc( midi_parameter2, midi0 );
+    putc( midi_parameter2, midi0 );
 }
 
 d_int I_RegisterSong(void* data)
@@ -314,7 +320,7 @@ d_int I_RegisterSong(void* data)
     data_head += sizeof(d_ushort);
 
     printf( "I_RegisterSong\n"
-        "   Magic%c%c%c, 0x%x,\n"
+        "   Magic %c%c%c, 0x%x,\n"
         "   Length bytes %d,\n"
         "   Offset 0x%x,\n"
         "   Primary Channel Amount %d,\n"
@@ -340,7 +346,7 @@ d_int I_RegisterSong(void* data)
     WRITE_BLONG( midi0, 0 ); // This is the size.
 
     // Event variables.
-    byte*   midi_delta_time = NULL;
+    d_uint  midi_delta_time = 0;
     d_short midi_event      = 0;
     d_short midi_channel    = 0;
     byte    midi_parameter1 = 0;
@@ -365,7 +371,7 @@ d_int I_RegisterSong(void* data)
                 {
                     d_uint note_number = *(byte*)(data + song_offset + i) & 0x7F;
                     i++;
-                    printf( "silence; note_number = %i;\n", note_number );
+                    //printf( "silence; note_number = %i;\n", note_number );
 
                     midi_event = 0x8;
                     midi_parameter1 = note_number;
@@ -432,7 +438,7 @@ d_int I_RegisterSong(void* data)
                     midi_parameter1 = mus_to_midi[controller % MUS_TABLE_LIMIT];
                     midi_parameter2 = 0x80;
 
-                    // write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
+                    // write_event_small(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1);
                 }
                 break;
             case 4: // Controller
@@ -446,15 +452,16 @@ d_int I_RegisterSong(void* data)
                     if( controller == 0 ) {
                         midi_event = 0xc;
                         midi_parameter1 = value;
-                        midi_parameter2 = 0x80;
+
+                        //write_event_small(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1);
                     }
                     else {
                         midi_event = 0xb;
                         midi_parameter1 = mus_to_midi[controller % MUS_TABLE_LIMIT];
                         midi_parameter2 = value;
-                    }
 
-                    // write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
+                        //write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
+                    }
                 }
                 break;
             default:
@@ -467,18 +474,16 @@ d_int I_RegisterSong(void* data)
 
         d_ulong delay_amount = 0;
 
-        if( last && i + song_offset < song_length )
-            midi_delta_time = (byte*)(data + song_offset + i);
-        else
-            midi_delta_time = NULL;
-
         while( last ) {
             last = (*(byte*)(data + song_offset + i) & 0x80) != 0;
             delay_amount = delay_amount * 128 + (*(byte*)(data + song_offset + i) & 0x7F);
             i++;
         }
+
+        midi_delta_time = delay_amount;
     }
 
+    putc( 0,    midi0 );
     putc( 0xFF, midi0 );
     putc( 0x2F, midi0 );
     putc( 0,    midi0 );
