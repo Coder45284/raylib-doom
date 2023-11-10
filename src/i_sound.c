@@ -236,6 +236,33 @@ putc( (number >>  0) & 0xFF, file );
 
 #define MUS_TABLE_LIMIT 15
 
+static void write_event(
+    FILE*   midi0,
+    byte**  midi_delta_time,
+    d_short midi_event,
+    d_short midi_channel,
+    byte    midi_parameter1,
+    byte    midi_parameter2)
+{
+    if( *midi_delta_time == NULL )
+        putc( 0, midi0 );
+    else {
+        int i = 0;
+
+        while( *midi_delta_time[i] & 0x80 != 0 ) {
+            putc( *midi_delta_time[i], midi0 );
+            i++;
+        }
+        putc( *midi_delta_time[i], midi0 );
+
+        *midi_delta_time = NULL;
+    }
+    putc( ((midi_event << 4) & 0xF0) | ((midi_channel) & 0x0F), midi0 );
+    putc( midi_parameter1, midi0 );
+    if( midi_parameter2 & 0x80 == 0 )
+        putc( midi_parameter2, midi0 );
+}
+
 d_int I_RegisterSong(void* data)
 {
     static byte mus_to_midi[MUS_TABLE_LIMIT] = {
@@ -427,23 +454,7 @@ d_int I_RegisterSong(void* data)
         if( !write_chunk )
             write_chunk = true;
         else {
-            if( midi_delta_time == NULL )
-                putc( 0, midi0 );
-            else {
-                int i = 0;
-
-                while( midi_delta_time[i] & 0x80 != 0 ) {
-                    putc( midi_delta_time[i], midi0 );
-                    i++;
-                }
-                putc( midi_delta_time[i], midi0 );
-
-                midi_delta_time = NULL;
-            }
-            putc( ((midi_event << 4) & 0xF0) | ((midi_channel) & 0x0F), midi0 );
-            putc( midi_parameter1, midi0 );
-            if( midi_parameter2 & 0x80 == 0 )
-                putc( midi_parameter2, midi0 );
+            write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
         }
 
         d_ulong delay_amount = 0;
