@@ -404,7 +404,7 @@ d_int I_RegisterSong(void* data)
                     midi_parameter1 = 7;
                     midi_parameter2 = volume;
 
-                    // write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
+                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
 
                     midi_event = 0x9;
                     midi_parameter1 = note_number;
@@ -425,7 +425,7 @@ d_int I_RegisterSong(void* data)
                     midi_parameter1 = (pitch_bend_long >> 0) & 0x7F;
                     midi_parameter2 = (pitch_bend_long >> 7) & 0x7F;
 
-                    // write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
+                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
                 }
                 break;
             case 3: // System Event
@@ -438,7 +438,7 @@ d_int I_RegisterSong(void* data)
                     midi_parameter1 = mus_to_midi[controller % MUS_TABLE_LIMIT];
                     midi_parameter2 = 0x80;
 
-                    // write_event_small(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1);
+                    write_event_small(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1);
                 }
                 break;
             case 4: // Controller
@@ -453,14 +453,14 @@ d_int I_RegisterSong(void* data)
                         midi_event = 0xc;
                         midi_parameter1 = value;
 
-                        //write_event_small(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1);
+                        write_event_small(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1);
                     }
                     else {
                         midi_event = 0xb;
                         midi_parameter1 = mus_to_midi[controller % MUS_TABLE_LIMIT];
                         midi_parameter2 = value;
 
-                        //write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
+                        write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
                     }
                 }
                 break;
