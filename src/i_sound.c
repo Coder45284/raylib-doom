@@ -467,8 +467,10 @@ d_int I_RegisterSong(void* data)
 
         d_ulong delay_amount = 0;
 
-        if( last )
-            midi_delta_time = (byte*)(data + song_offset);
+        if( last && i + song_offset < song_length )
+            midi_delta_time = (byte*)(data + song_offset + i);
+        else
+            midi_delta_time = NULL;
 
         while( last ) {
             last = (*(byte*)(data + song_offset + i) & 0x80) != 0;
