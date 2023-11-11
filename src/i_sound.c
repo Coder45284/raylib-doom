@@ -355,7 +355,7 @@ d_int I_RegisterSong(void* data)
     short *midi_buffer = malloc( 1 );
     size_t midi_buffer_length = 0;
 
-    tsf_set_output(sound_font, TSF_MONO, 44100, 0);
+    tsf_set_output(sound_font, TSF_STEREO_INTERLEAVED, 44100, 0);
 
     for( d_int i = 0; i < song_length; ) {
         byte info = *(byte*)(data + song_offset + i);
@@ -451,10 +451,10 @@ d_int I_RegisterSong(void* data)
         if( delay_amount != 0 ) {
             size_t size = (44100 * delay_amount) / 140;
 
-            midi_buffer = realloc(midi_buffer, sizeof(short) * (midi_buffer_length + size));
+            midi_buffer = realloc(midi_buffer, 2* sizeof(short) * (midi_buffer_length + size));
             tsf_render_short(sound_font, midi_buffer + midi_buffer_length, size, 0);
 
-            midi_buffer_length += size;
+            midi_buffer_length += 2 * size;
         }
 
         midi_delta_time = delay_amount;
@@ -463,10 +463,10 @@ d_int I_RegisterSong(void* data)
     printf( "midi_length = %i.\n", midi_length );
 
     Wave wave;
-    wave.frameCount = midi_buffer_length;
+    wave.frameCount = midi_buffer_length / 2;
     wave.sampleRate = 44100;
     wave.sampleSize = 16;
-    wave.channels   = 1;
+    wave.channels   = 2;
     wave.data = midi_buffer;
 
     ExportWave(wave, "a.wav");
