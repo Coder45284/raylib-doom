@@ -210,6 +210,44 @@ typedef struct MusicBufferStruct {
 #define MAX_MUSIC_BUFFERS 4
 static MusicBuffer music_buffers[MAX_MUSIC_BUFFERS];
 static tsf* sound_font = NULL;
+static d_int current_mus_handle = -1;
+static AudioStream mus_stream;
+
+#define MUS_TABLE_LIMIT 15
+#define MUS_DELAY_RATE  140
+
+#define MIDI_SAMPLE_RATE 44100
+#define MIDI_CHANNELS    2
+#define MIDI_BUFFER_TIME 4 // Seconds
+#define MIDI_BUFFER_SIZE (MIDI_BUFFER_TIME * MIDI_CHANNELS * sizeof(short) * MIDI_SAMPLE_RATE)
+
+#if MIDI_CHANNELS == 1
+#define MIDI_TSF_OPTIONS TSF_MONO
+#elif MIDI_CHANNELS == 2
+#define MIDI_TSF_OPTIONS TSF_STEREO_INTERLEAVED
+#else
+#error "Unsupported MIDI type"
+#endif
+
+void MidiInputCallback(void* buffer, unsigned int frames )
+{
+    /*if( current_mus_handle >= MAX_MUSIC_BUFFERS ||
+        current_mus_handle < 0 ||
+        music_buffers[ current_mus_handle ].mus_data == NULL ||
+        music_buffers[ current_mus_handle ].mus_data_length == 0 )
+    {
+        memset( buffer, 0, frames * MIDI_CHANNELS * sizeof(short) );
+        return;
+    }*/
+
+    short *values = (short*)buffer;
+
+    for( unsigned int f = 0; f < frames; f++ ) {
+        for( unsigned int c = 0; c < MIDI_CHANNELS; c++ ) {
+            values[MIDI_CHANNELS * f + c] = f % 8192;
+        }
+    }
+}
 
 //
 // MUSIC API.
@@ -227,6 +265,16 @@ void I_InitMusic(void)
 
     if( sound_font == NULL )
         printf( "Soundfont \"%s\" not found! No music playback!\n", soundfont_filepath);
+
+    tsf_set_output(sound_font, MIDI_TSF_OPTIONS, MIDI_SAMPLE_RATE, 0);
+
+    SetAudioStreamBufferSizeDefault(MIDI_BUFFER_SIZE);
+
+    mus_stream = LoadAudioStream( MIDI_SAMPLE_RATE, 16, MIDI_CHANNELS );
+
+    SetAudioStreamCallback( mus_stream, MidiInputCallback );
+
+    PlayAudioStream( mus_stream );
 }
 
 void I_ShutdownMusic(void)
@@ -280,8 +328,6 @@ void I_UnRegisterSong(d_int handle)
     music_buffers[ handle ].mus_data = NULL;
     music_buffers[ handle ].mus_data_length = 0;
 }
-
-#define MUS_TABLE_LIMIT 15
 
 d_int I_RegisterSong(void* data)
 {
@@ -344,18 +390,13 @@ d_int I_RegisterSong(void* data)
         primary_channel_amount, second_channel_amount, instrument_amount );
 
     // Event variables.
-    d_uint  midi_delta_time = 0;
     d_short midi_event      = 0;
     d_short midi_channel    = 0;
     byte    midi_parameter1 = 0;
     byte    midi_parameter2 = 0;
 
-    d_ulong midi_length = 0;
-
     short *midi_buffer = malloc( 1 );
     size_t midi_buffer_length = 0;
-
-    tsf_set_output(sound_font, TSF_STEREO_INTERLEAVED, 44100, 0);
 
     for( d_int i = 0; i < song_length; ) {
         byte info = *(byte*)(data + song_offset + i);
@@ -449,27 +490,14 @@ d_int I_RegisterSong(void* data)
         }
 
         if( delay_amount != 0 ) {
-            size_t size = (44100 * delay_amount) / 140;
+            size_t size = (MIDI_SAMPLE_RATE * delay_amount) / MUS_DELAY_RATE;
 
-            midi_buffer = realloc(midi_buffer, 2* sizeof(short) * (midi_buffer_length + size));
+            midi_buffer = realloc(midi_buffer, 2 * sizeof(short) * (midi_buffer_length + size));
             tsf_render_short(sound_font, midi_buffer + midi_buffer_length, size, 0);
 
             midi_buffer_length += 2 * size;
         }
-
-        midi_delta_time = delay_amount;
-        midi_length += delay_amount;
     }
-    printf( "midi_length = %i.\n", midi_length );
-
-    Wave wave;
-    wave.frameCount = midi_buffer_length / 2;
-    wave.sampleRate = 44100;
-    wave.sampleSize = 16;
-    wave.channels   = 2;
-    wave.data = midi_buffer;
-
-    //ExportWave(wave, "a.wav");
 
     free( midi_buffer );
 
