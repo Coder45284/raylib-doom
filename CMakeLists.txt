@@ -13,6 +13,7 @@ include_directories( "${CMAKE_SOURCE_DIR}/header_libraries/" )
 
 add_executable(${PROJECT_NAME} ${DOOM_SOURCE_FILES})
 
+target_link_libraries(${PROJECT_NAME} m)
 target_link_libraries(${PROJECT_NAME} raylib)
 
 # Checks if OSX and links appropriate frameworks (only required on MacOS)

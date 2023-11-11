@@ -41,6 +41,9 @@
 
 #include "raylib.h"
 
+#define TSF_IMPLEMENTATION
+#include "tsf.h"
+
 #define SFX_CHANNELS          1
 #define SFX_BYTES_PER_CHANNEL 1
 #define SFX_BITS_PER_CHANNEL  SFX_BYTES_PER_CHANNEL * 8
@@ -205,12 +208,11 @@ typedef struct MusicBufferStruct {
 } MusicBuffer;
 
 #define MAX_MUSIC_BUFFERS 4
-MusicBuffer music_buffers[MAX_MUSIC_BUFFERS];
+static MusicBuffer music_buffers[MAX_MUSIC_BUFFERS];
+static tsf* sound_font = NULL;
 
 //
 // MUSIC API.
-// Still no music done.
-// Remains. Dummies.
 //
 void I_InitMusic(void)
 {
@@ -218,10 +220,21 @@ void I_InitMusic(void)
         music_buffers[i].mus_data = NULL;
         music_buffers[i].mus_data_length = 0;
     }
+
+    d_char soundfont_filepath[] = "FluidR3_GM.sf2";
+
+    sound_font = tsf_load_filename(soundfont_filepath);
+
+    if( sound_font == NULL )
+        printf( "Soundfont \"%s\" not found! No music playback!\n", soundfont_filepath);
 }
 
 void I_ShutdownMusic(void)
 {
+    if( sound_font != NULL )
+        tsf_close( sound_font );
+
+    sound_font = NULL;
 }
 
 void I_PlaySong(d_int handle, d_int looping)
@@ -268,62 +281,7 @@ void I_UnRegisterSong(d_int handle)
     music_buffers[ handle ].mus_data_length = 0;
 }
 
-#define WRITE_BSHORT( file, number ) \
-putc( (number >> 8) & 0xFF, file ); \
-putc( (number >> 0) & 0xFF, file );
-
-#define WRITE_BLONG( file, number ) \
-putc( (number >> 24) & 0xFF, file ); \
-putc( (number >> 16) & 0xFF, file ); \
-putc( (number >>  8) & 0xFF, file ); \
-putc( (number >>  0) & 0xFF, file );
-
 #define MUS_TABLE_LIMIT 15
-
-static void write_event_small(
-    FILE*   midi0,
-    d_uint *midi_delta_time,
-    d_short midi_event,
-    d_short midi_channel,
-    byte    midi_parameter1 )
-{
-    if( *midi_delta_time == 0 )
-        putc( 0, midi0 );
-    else {
-        *midi_delta_time *= 2;
-
-        int count = 0;
-        d_uint count_bit = *midi_delta_time;
-
-        while( count_bit != 0 ) {
-            count_bit = count_bit >> 7;
-            count++;
-        }
-
-        while( count != 0 ) {
-            byte value = (*midi_delta_time >> (7 * count)) & 0x7F;
-
-            count--;
-
-            putc( value | ((count != 0) * 0x80), midi0 );
-        }
-    }
-    putc( ((midi_event << 4) & 0xF0) | ((midi_channel) & 0x0F), midi0 );
-    putc( midi_parameter1, midi0 );
-}
-
-static void write_event(
-    FILE*   midi0,
-    d_uint *midi_delta_time,
-    d_short midi_event,
-    d_short midi_channel,
-    byte    midi_parameter1,
-    byte    midi_parameter2)
-{
-    write_event_small(midi0, midi_delta_time, midi_event, midi_channel, midi_parameter1);
-
-    putc( midi_parameter2, midi0 );
-}
 
 d_int I_RegisterSong(void* data)
 {
@@ -385,22 +343,6 @@ d_int I_RegisterSong(void* data)
         magic[0], magic[1], magic[2], magic[3], song_length, song_offset,
         primary_channel_amount, second_channel_amount, instrument_amount );
 
-    FILE* midi0 = fopen("song.mid", "wb");
-
-    printf( "   MUS Track\n" );
-
-    // Write Header Chunk
-    fwrite( "MThd", 1, 4, midi0 );
-    WRITE_BLONG(  midi0, 6 );
-    WRITE_BSHORT( midi0, 0 );
-    WRITE_BSHORT( midi0, 1 );
-    WRITE_BSHORT( midi0, 140 );
-
-    // Write Track Chunk
-    fwrite( "MTrk", 1, 4, midi0 );
-    long midi_size_pos = ftell( midi0 );
-    WRITE_BLONG( midi0, 0 ); // This is the size.
-
     // Event variables.
     d_uint  midi_delta_time = 0;
     d_short midi_event      = 0;
@@ -409,6 +351,11 @@ d_int I_RegisterSong(void* data)
     byte    midi_parameter2 = 0;
 
     d_ulong midi_length = 0;
+
+    short *midi_buffer = malloc( 1 );
+    size_t midi_buffer_length = 0;
+
+    tsf_set_output(sound_font, TSF_MONO, 44100, 0);
 
     for( d_int i = 0; i < song_length; ) {
         byte info = *(byte*)(data + song_offset + i);
@@ -429,13 +376,8 @@ d_int I_RegisterSong(void* data)
                 {
                     d_uint note_number = *(byte*)(data + song_offset + i) & 0x7F;
                     i++;
-                    //printf( "silence; note_number = %i;\n", note_number );
 
-                    midi_event = 0x8;
-                    midi_parameter1 = note_number;
-                    midi_parameter2 = 64; // max velocity.
-
-                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
+                    tsf_channel_note_off(sound_font, midi_channel, note_number);
                 }
                 break;
             case 1: // Play Note
@@ -456,47 +398,23 @@ d_int I_RegisterSong(void* data)
                     else
                         volume = channel_last_volumes[channel];
 
-                    //printf( "volume = %i; note_number = %i;\n", volume, note_number );
-
-                    midi_event = 0xb;
-                    midi_parameter1 = 7;
-                    midi_parameter2 = volume;
-
-                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
-
-                    midi_event = 0x9;
-                    midi_parameter1 = note_number;
-                    midi_parameter2 = 64; // maybe this affects the volume.
-
-                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
+                    tsf_channel_note_on(sound_font, midi_channel, note_number, volume * (1./127.));
                 }
                 break;
             case 2: // Pitch Bend
                 {
                     byte pitch_bend = *(byte*)(data + song_offset + i);
                     i++;
-                    //printf( "pitch_blend = %i;\n", pitch_bend );
 
-                    d_ushort pitch_bend_long = pitch_bend * 0x40;
-
-                    midi_event = 0xe;
-                    midi_parameter1 = (pitch_bend_long >> 0) & 0x7F;
-                    midi_parameter2 = (pitch_bend_long >> 7) & 0x7F;
-
-                    write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
+                    tsf_channel_set_pitchwheel(sound_font, midi_channel, pitch_bend * 0x40);
                 }
                 break;
             case 3: // System Event
                 {
                     byte controller = *(byte*)(data + song_offset + i) & 0x7F;
                     i++;
-                    //printf( "controller = %i;\n", controller );
 
-                    midi_event = 0xb;
-                    midi_parameter1 = mus_to_midi[controller % MUS_TABLE_LIMIT];
-                    midi_parameter2 = 0x80;
-
-                    write_event_small(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1);
+                    tsf_channel_midi_control(sound_font, midi_channel, mus_to_midi[controller % MUS_TABLE_LIMIT], 0);
                 }
                 break;
             case 4: // Controller
@@ -508,23 +426,15 @@ d_int I_RegisterSong(void* data)
                     //printf( "controller = %i; value = %i;\n", controller, value );
 
                     if( controller == 0 ) {
-                        midi_event = 0xc;
-                        midi_parameter1 = value;
-
-                        write_event_small(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1);
+                        tsf_channel_set_presetnumber(sound_font, midi_channel, value, (midi_channel == 9));
                     }
                     else {
-                        midi_event = 0xb;
-                        midi_parameter1 = mus_to_midi[controller % MUS_TABLE_LIMIT];
-                        midi_parameter2 = value;
-
-                        write_event(midi0, &midi_delta_time, midi_event, midi_channel, midi_parameter1, midi_parameter2);
+                        tsf_channel_midi_control(sound_font, midi_channel, mus_to_midi[controller % MUS_TABLE_LIMIT], value);
                     }
                 }
                 break;
             default:
                 printf( "command not recognized at 0x%x;\n", i );
-                printf( "file offset 0x%x\n", ftell( midi0 ) );
             case 5:
             case 6:
                 break;
@@ -538,22 +448,30 @@ d_int I_RegisterSong(void* data)
             i++;
         }
 
+        if( delay_amount != 0 ) {
+            size_t size = (44100 * delay_amount) / 140;
+
+            midi_buffer = realloc(midi_buffer, sizeof(short) * (midi_buffer_length + size));
+            tsf_render_short(sound_font, midi_buffer + midi_buffer_length, size, 0);
+
+            midi_buffer_length += size;
+        }
+
         midi_delta_time = delay_amount;
         midi_length += delay_amount;
     }
-
-    putc( 0,    midi0 );
-    putc( 0xFF, midi0 );
-    putc( 0x2F, midi0 );
-    putc( 0,    midi0 );
-
-    long ending_offset = ftell( midi0 );
-    fseek( midi0, midi_size_pos, SEEK_SET );
-    WRITE_BLONG( midi0, ending_offset - midi_size_pos - 4 );
-
-    fclose( midi0 );
-
     printf( "midi_length = %i.\n", midi_length );
+
+    Wave wave;
+    wave.frameCount = midi_buffer_length;
+    wave.sampleRate = 44100;
+    wave.sampleSize = 16;
+    wave.channels   = 1;
+    wave.data = midi_buffer;
+
+    ExportWave(wave, "a.wav");
+
+    free( midi_buffer );
 
     return 1;
 }
