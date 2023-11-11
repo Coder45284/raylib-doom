@@ -191,6 +191,22 @@ void I_InitSound()
     }
 }
 
+typedef struct MusicBufferStruct {
+    void *mus_data;
+    size_t mus_data_length; // bytes.
+
+    void *mus_events;
+    size_t mus_events_limit; // bytes.
+
+    size_t mus_event_head;
+    d_int looping;
+    d_int paused;
+    d_int reset;
+} MusicBuffer;
+
+#define MAX_MUSIC_BUFFERS 4
+MusicBuffer music_buffers[MAX_MUSIC_BUFFERS];
+
 //
 // MUSIC API.
 // Still no music done.
@@ -198,6 +214,10 @@ void I_InitSound()
 //
 void I_InitMusic(void)
 {
+    for( int i = 0; i < MAX_MUSIC_BUFFERS; i++ ) {
+        music_buffers[i].mus_data = NULL;
+        music_buffers[i].mus_data_length = 0;
+    }
 }
 
 void I_ShutdownMusic(void)
@@ -206,22 +226,46 @@ void I_ShutdownMusic(void)
 
 void I_PlaySong(d_int handle, d_int looping)
 {
+    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+        return;
+
+    music_buffers[handle].mus_event_head = 0;
+    music_buffers[handle].looping = looping;
+    music_buffers[handle].paused = false;
+    music_buffers[handle].reset = true;
 }
 
 void I_PauseSong (d_int handle)
 {
+    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+        return;
+
+    music_buffers[handle].paused = true;
 }
 
 void I_ResumeSong (d_int handle)
 {
+    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+        return;
+
+    music_buffers[handle].paused = false;
 }
 
 void I_StopSong(d_int handle)
 {
+    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+        return;
+
+    music_buffers[handle].reset = true;
 }
 
 void I_UnRegisterSong(d_int handle)
 {
+    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+        return;
+
+    music_buffers[ handle ].mus_data = NULL;
+    music_buffers[ handle ].mus_data_length = 0;
 }
 
 #define WRITE_BSHORT( file, number ) \
@@ -517,7 +561,10 @@ d_int I_RegisterSong(void* data)
 // Is the song playing?
 d_int I_QrySongPlaying(d_int handle)
 {
-    return false;
+    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+        return false; // This handle is out of bounds.
+
+    return !music_buffers[handle].paused;
 }
 
 
