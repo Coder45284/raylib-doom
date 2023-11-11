@@ -246,10 +246,22 @@ static void write_event_small(
     if( *midi_delta_time == 0 )
         putc( 0, midi0 );
     else {
-        while( *midi_delta_time != 0 ) {
-            putc( *midi_delta_time & 0x7F, midi0 );
+        *midi_delta_time *= 2;
 
-            *midi_delta_time = *midi_delta_time >> 7;
+        int count = 0;
+        d_uint count_bit = *midi_delta_time;
+
+        while( count_bit != 0 ) {
+            count_bit = count_bit >> 7;
+            count++;
+        }
+
+        while( count != 0 ) {
+            byte value = (*midi_delta_time >> (7 * count)) & 0x7F;
+
+            count--;
+
+            putc( value | ((count != 0) * 0x80), midi0 );
         }
     }
     putc( ((midi_event << 4) & 0xF0) | ((midi_channel) & 0x0F), midi0 );
@@ -351,6 +363,8 @@ d_int I_RegisterSong(void* data)
     d_short midi_channel    = 0;
     byte    midi_parameter1 = 0;
     byte    midi_parameter2 = 0;
+
+    d_ulong midi_length = 0;
 
     for( d_int i = 0; i < song_length; ) {
         byte info = *(byte*)(data + song_offset + i);
@@ -481,6 +495,7 @@ d_int I_RegisterSong(void* data)
         }
 
         midi_delta_time = delay_amount;
+        midi_length += delay_amount;
     }
 
     putc( 0,    midi0 );
@@ -494,7 +509,7 @@ d_int I_RegisterSong(void* data)
 
     fclose( midi0 );
 
-    printf( "\n" );
+    printf( "midi_length = %i.\n", midi_length );
 
     return 1;
 }
