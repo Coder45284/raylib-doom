@@ -469,7 +469,7 @@ d_int I_RegisterSong(void* data)
     wave.channels   = 2;
     wave.data = midi_buffer;
 
-    ExportWave(wave, "a.wav");
+    //ExportWave(wave, "a.wav");
 
     free( midi_buffer );
 
