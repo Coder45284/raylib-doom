@@ -9,6 +9,8 @@ set(CMAKE_C_EXTENSIONS False)
 
 file(GLOB DOOM_SOURCE_FILES src/*.c )
 
+include_directories( "${CMAKE_SOURCE_DIR}/header_libraries/" )
+
 add_executable(${PROJECT_NAME} ${DOOM_SOURCE_FILES})
 
 target_link_libraries(${PROJECT_NAME} raylib)
