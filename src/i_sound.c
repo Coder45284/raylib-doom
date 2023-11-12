@@ -356,13 +356,7 @@ void MidiInputCallback(void* buffer, unsigned int frames )
                 }
                 break;
             case 5:
-                break;
             case 6:
-                {
-                    for( unsigned int c = 0; c < MUS_CHANNEL_AMOUNT; c++ )
-                        music_buffers[ current_mus_handle ].channel_volume[c] = 100;
-                    music_buffers[ current_mus_handle ].mus_event_head = music_buffers[ current_mus_handle ].mus_event_begin;
-                }
                 break;
             default:
                 {
@@ -397,6 +391,14 @@ void MidiInputCallback(void* buffer, unsigned int frames )
                 last_frame_index += delay_frames;
             }
         }
+    }
+
+    if( music_buffers[ current_mus_handle ].looping && music_buffers[ current_mus_handle ].mus_event_head > music_buffers[ current_mus_handle ].mus_data_end )
+    {
+        for( unsigned int c = 0; c < MUS_CHANNEL_AMOUNT; c++ )
+            music_buffers[ current_mus_handle ].channel_volume[c] = 100;
+        music_buffers[ current_mus_handle ].mus_event_head = music_buffers[ current_mus_handle ].mus_event_begin;
+        tsf_reset( sound_font );
     }
 
     if( bad_command != -1 ) {
