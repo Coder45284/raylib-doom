@@ -258,6 +258,8 @@ void I_SetPalette(byte* palette)
 
 void I_InitGraphics()
 {
+    printf( "I_InitGraphics\n" );
+
     int screen_width = SCREENWIDTH;
     int screen_height = SCREENHEIGHT;
 
