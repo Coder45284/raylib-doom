@@ -205,7 +205,6 @@ typedef struct MusicBufferStruct {
     byte channel_volume[MUS_CHANNEL_AMOUNT];
     d_int looping;
     d_int paused;
-    d_int reset;
     d_uint delay_amount;
 } MusicBuffer;
 
@@ -232,12 +231,13 @@ static AudioStream mus_stream;
 
 void MidiInputCallback(void* buffer, unsigned int frames )
 {
-    memset( buffer, 0, frames * MIDI_CHANNELS * sizeof(short) );
     if( frames == 0 ||
         current_mus_handle >= MAX_MUSIC_BUFFERS ||
         current_mus_handle < 0 ||
-        music_buffers[ current_mus_handle ].mus_data == NULL )
+        music_buffers[ current_mus_handle ].mus_data == NULL ||
+        music_buffers[ current_mus_handle ].paused )
     {
+        memset( buffer, 0, frames * MIDI_CHANNELS * sizeof(short) );
         return;
     }
 
@@ -282,7 +282,7 @@ void MidiInputCallback(void* buffer, unsigned int frames )
 
     int bad_command = -1;
 
-    while( music_buffers[ current_mus_handle ].mus_event_head < music_buffers[ current_mus_handle ].mus_data_end &&
+    while( music_buffers[ current_mus_handle ].mus_event_head <= music_buffers[ current_mus_handle ].mus_data_end &&
         last_frame_index != frames
     ) {
         byte info = *(byte*)(music_buffers[ current_mus_handle ].mus_event_head);
@@ -362,8 +362,6 @@ void MidiInputCallback(void* buffer, unsigned int frames )
                     for( unsigned int c = 0; c < MUS_CHANNEL_AMOUNT; c++ )
                         music_buffers[ current_mus_handle ].channel_volume[c] = 100;
                     music_buffers[ current_mus_handle ].mus_event_head = music_buffers[ current_mus_handle ].mus_event_begin;
-
-                    printf( "End\n");
                 }
                 break;
             default:
@@ -448,9 +446,14 @@ void I_PlaySong(d_int handle, d_int looping)
 
     music_buffers[handle].looping = looping;
     music_buffers[handle].paused = false;
-    music_buffers[handle].reset = true;
 
     current_mus_handle = handle;
+
+    for( unsigned int c = 0; c < MUS_CHANNEL_AMOUNT; c++ )
+        music_buffers[ current_mus_handle ].channel_volume[c] = 100;
+    music_buffers[ current_mus_handle ].mus_event_head = music_buffers[ current_mus_handle ].mus_event_begin;
+
+    tsf_reset( sound_font );
 }
 
 void I_PauseSong (d_int handle)
@@ -474,7 +477,15 @@ void I_StopSong(d_int handle)
     if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
         return;
 
-    music_buffers[handle].reset = true;
+    music_buffers[ handle ].paused = true;
+    for( unsigned int c = 0; c < MUS_CHANNEL_AMOUNT; c++ )
+        music_buffers[ handle ].channel_volume[c] = 100;
+    music_buffers[ handle ].mus_event_head = music_buffers[ handle ].mus_event_begin;
+
+    if( handle == current_mus_handle)
+    {
+        tsf_reset( sound_font );
+    }
 }
 
 void I_UnRegisterSong(d_int handle)
@@ -520,8 +531,6 @@ d_int I_RegisterSong(void* data)
     music_buffers[handle].mus_event_head = music_buffers[handle].mus_event_begin;
     data_head += sizeof(d_ushort);
 
-    printf( "data %p\nbegin %p\nhead %p\n", data, music_buffers[handle].mus_event_begin, music_buffers[handle].mus_event_head);
-
     // primary_channel_amount = SHORT( *(d_ushort*)data_head );
     // data_head += sizeof(d_ushort);
     // second_channel_amount = SHORT( *(d_ushort*)data_head );
@@ -534,7 +543,6 @@ d_int I_RegisterSong(void* data)
     }
     music_buffers[handle].looping = false;
     music_buffers[handle].paused  = true;
-    music_buffers[handle].reset   = false;
     music_buffers[handle].delay_amount = 0;
 
     return handle;
@@ -543,7 +551,9 @@ d_int I_RegisterSong(void* data)
 // Is the song playing?
 d_int I_QrySongPlaying(d_int handle)
 {
-    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+    if( handle != current_mus_handle ||
+        handle >= MAX_MUSIC_BUFFERS  ||
+        handle < 0 )
         return false; // This handle is out of bounds.
 
     return !music_buffers[handle].paused;
