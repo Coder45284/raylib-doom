@@ -356,8 +356,6 @@ void D_DoomLoop (void)
 		printf ("debug output to: %s\n",filename);
 		debugfile = fopen (filename,"w");
     }
-	
-    I_InitGraphics ();
 
     while (1)
     {
