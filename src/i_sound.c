@@ -194,17 +194,19 @@ void I_InitSound()
     }
 }
 
+#define MUS_CHANNEL_AMOUNT 16
+
 typedef struct MusicBufferStruct {
     void *mus_data;
-    size_t mus_data_length; // bytes.
+    void *mus_event_begin;
+    void *mus_event_head;
+    void *mus_data_end;
 
-    void *mus_events;
-    size_t mus_events_limit; // bytes.
-
-    size_t mus_event_head;
+    byte channel_volume[MUS_CHANNEL_AMOUNT];
     d_int looping;
     d_int paused;
     d_int reset;
+    d_uint delay_amount;
 } MusicBuffer;
 
 #define MAX_MUSIC_BUFFERS 4
@@ -218,8 +220,7 @@ static AudioStream mus_stream;
 
 #define MIDI_SAMPLE_RATE 44100
 #define MIDI_CHANNELS    2
-#define MIDI_BUFFER_TIME 4 // Seconds
-#define MIDI_BUFFER_SIZE (MIDI_BUFFER_TIME * MIDI_CHANNELS * sizeof(short) * MIDI_SAMPLE_RATE)
+#define MIDI_BUFFER_SIZE (size_t)(8192 * MIDI_CHANNELS * sizeof(short))
 
 #if MIDI_CHANNELS == 1
 #define MIDI_TSF_OPTIONS TSF_MONO
@@ -231,21 +232,177 @@ static AudioStream mus_stream;
 
 void MidiInputCallback(void* buffer, unsigned int frames )
 {
-    /*if( current_mus_handle >= MAX_MUSIC_BUFFERS ||
+    memset( buffer, 0, frames * MIDI_CHANNELS * sizeof(short) );
+    if( frames == 0 ||
+        current_mus_handle >= MAX_MUSIC_BUFFERS ||
         current_mus_handle < 0 ||
-        music_buffers[ current_mus_handle ].mus_data == NULL ||
-        music_buffers[ current_mus_handle ].mus_data_length == 0 )
+        music_buffers[ current_mus_handle ].mus_data == NULL )
     {
-        memset( buffer, 0, frames * MIDI_CHANNELS * sizeof(short) );
         return;
-    }*/
+    }
 
-    short *values = (short*)buffer;
+    static byte mus_to_midi[MUS_TABLE_LIMIT] = {
+          0, //  0
+          0, //  1
+          1, //  2
+          7, //  3
+         10, //  4
+         11, //  5
+         91, //  6
+         93, //  7
+         64, //  8
+         67, //  9
+        120, // 10
+        123, // 11
+        126, // 12
+        127, // 13
+        121 }; // 14
 
-    for( unsigned int f = 0; f < frames; f++ ) {
-        for( unsigned int c = 0; c < MIDI_CHANNELS; c++ ) {
-            values[MIDI_CHANNELS * f + c] = f % 8192;
+    unsigned int last_frame_index = 0;
+
+    if( music_buffers[ current_mus_handle ].delay_amount != 0 )
+    {
+        if( music_buffers[ current_mus_handle ].delay_amount <= frames )
+        {
+            tsf_render_short(sound_font, (short*)buffer, music_buffers[ current_mus_handle ].delay_amount, 0);
+
+            last_frame_index = music_buffers[ current_mus_handle ].delay_amount;
+
+            music_buffers[ current_mus_handle ].delay_amount = 0;
         }
+        else
+        {
+            tsf_render_short(sound_font, (short*)buffer, frames, 0);
+
+            music_buffers[ current_mus_handle ].delay_amount -= frames;
+
+            return;
+        }
+    }
+
+    int bad_command = -1;
+
+    while( music_buffers[ current_mus_handle ].mus_event_head < music_buffers[ current_mus_handle ].mus_data_end &&
+        last_frame_index != frames
+    ) {
+        byte info = *(byte*)(music_buffers[ current_mus_handle ].mus_event_head);
+
+        bool   last    = (info & 0x80) != 0;
+        d_uint type    = (info & 0x70) >> 4;
+        d_uint midi_channel = (info & 0x0F);
+
+        // Info has been read.
+        music_buffers[ current_mus_handle ].mus_event_head++;
+
+        switch( type ) {
+            case 0: // Release Note
+                {
+                    d_uint note_number = *(byte*)(music_buffers[ current_mus_handle ].mus_event_head) & 0x7F;
+                    music_buffers[ current_mus_handle ].mus_event_head++;
+
+                    tsf_channel_note_off(sound_font, midi_channel, note_number);
+                }
+                break;
+            case 1: // Play Note
+                {
+                    byte             note = *(byte*)(music_buffers[ current_mus_handle ].mus_event_head);
+                    boolean volume_enable = note & 0x80;
+                    byte      note_number = note & 0x7F;
+                    music_buffers[ current_mus_handle ].mus_event_head++;
+
+                    byte volume;
+
+                    if( volume_enable ) {
+                        volume = *(byte*)(music_buffers[ current_mus_handle ].mus_event_head) & 0x7F;
+                        music_buffers[ current_mus_handle ].channel_volume[midi_channel] = volume;
+
+                        music_buffers[ current_mus_handle ].mus_event_head++;
+                    }
+                    else
+                        volume = music_buffers[ current_mus_handle ].channel_volume[midi_channel];
+
+                    tsf_channel_note_on(sound_font, midi_channel, note_number, volume * (1./127.));
+                }
+                break;
+            case 2: // Pitch Bend
+                {
+                    byte pitch_bend = *(byte*)(music_buffers[ current_mus_handle ].mus_event_head);
+                    music_buffers[ current_mus_handle ].mus_event_head++;
+
+                    tsf_channel_set_pitchwheel(sound_font, midi_channel, pitch_bend * 0x40);
+                }
+                break;
+            case 3: // System Event
+                {
+                    byte controller = *(byte*)(music_buffers[ current_mus_handle ].mus_event_head) & 0x7F;
+                    music_buffers[ current_mus_handle ].mus_event_head++;
+
+                    tsf_channel_midi_control(sound_font, midi_channel, mus_to_midi[controller % MUS_TABLE_LIMIT], 0);
+                }
+                break;
+            case 4: // Controller
+                {
+                    byte controller = *(byte*)(music_buffers[ current_mus_handle ].mus_event_head) & 0x7F;
+                    music_buffers[ current_mus_handle ].mus_event_head++;
+                    byte value = *(byte*)(music_buffers[ current_mus_handle ].mus_event_head) & 0x7F;
+                    music_buffers[ current_mus_handle ].mus_event_head++;
+
+                    if( controller == 0 ) {
+                        tsf_channel_set_presetnumber(sound_font, midi_channel, value, (midi_channel == 9));
+                    }
+                    else {
+                        tsf_channel_midi_control(sound_font, midi_channel, mus_to_midi[controller % MUS_TABLE_LIMIT], value);
+                    }
+                }
+                break;
+            case 5:
+                break;
+            case 6:
+                {
+                    for( unsigned int c = 0; c < MUS_CHANNEL_AMOUNT; c++ )
+                        music_buffers[ current_mus_handle ].channel_volume[c] = 100;
+                    music_buffers[ current_mus_handle ].mus_event_head = music_buffers[ current_mus_handle ].mus_event_begin;
+
+                    printf( "End\n");
+                }
+                break;
+            default:
+                {
+                    if( bad_command != -1 )
+                        bad_command = music_buffers[ current_mus_handle ].mus_event_head - music_buffers[ current_mus_handle ].mus_event_begin;
+                }
+                break;
+        }
+
+        d_ulong delay_amount = 0;
+
+        while( last ) {
+            last = (*(byte*)(music_buffers[ current_mus_handle ].mus_event_head) & 0x80) != 0;
+            delay_amount = delay_amount * 128 + (*(byte*)(music_buffers[ current_mus_handle ].mus_event_head) & 0x7F);
+            music_buffers[ current_mus_handle ].mus_event_head++;
+        }
+
+        if( delay_amount != 0 ) {
+            unsigned int delay_frames = (MIDI_SAMPLE_RATE * delay_amount) / MUS_DELAY_RATE;
+
+            if( last_frame_index + delay_frames > frames )
+            {
+                unsigned int clipped_delay_frames = frames - last_frame_index;
+                tsf_render_short(sound_font, ((short*)buffer) + MIDI_CHANNELS * last_frame_index, clipped_delay_frames, 0);
+                last_frame_index = frames;
+
+                music_buffers[ current_mus_handle ].delay_amount = delay_frames - clipped_delay_frames;
+            }
+            else {
+                tsf_render_short(sound_font, ((short*)buffer) + MIDI_CHANNELS * last_frame_index, delay_frames, 0);
+
+                last_frame_index += delay_frames;
+            }
+        }
+    }
+
+    if( bad_command != -1 ) {
+        printf( "command not recognized %i\n", bad_command );
     }
 }
 
@@ -256,7 +413,6 @@ void I_InitMusic(void)
 {
     for( int i = 0; i < MAX_MUSIC_BUFFERS; i++ ) {
         music_buffers[i].mus_data = NULL;
-        music_buffers[i].mus_data_length = 0;
     }
 
     d_char soundfont_filepath[] = "FluidR3_GM.sf2";
@@ -290,10 +446,11 @@ void I_PlaySong(d_int handle, d_int looping)
     if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
         return;
 
-    music_buffers[handle].mus_event_head = 0;
     music_buffers[handle].looping = looping;
     music_buffers[handle].paused = false;
     music_buffers[handle].reset = true;
+
+    current_mus_handle = handle;
 }
 
 void I_PauseSong (d_int handle)
@@ -326,182 +483,61 @@ void I_UnRegisterSong(d_int handle)
         return;
 
     music_buffers[ handle ].mus_data = NULL;
-    music_buffers[ handle ].mus_data_length = 0;
 }
 
 d_int I_RegisterSong(void* data)
 {
-    static byte mus_to_midi[MUS_TABLE_LIMIT] = {
-          0, //  0
-          0, //  1
-          1, //  2
-          7, //  3
-         10, //  4
-         11, //  5
-         91, //  6
-         93, //  7
-         64, //  8
-         67, //  9
-        120, // 10
-        123, // 11
-        126, // 12
-        127, // 13
-        121, // 14
-    };
+    d_int handle = -1;
 
-    void* data_head = data;
-    d_ushort song_length = 0;
-    d_ushort song_offset = 0;
-    d_ushort primary_channel_amount = 0;
-    d_ushort second_channel_amount = 0;
-    d_ushort instrument_amount = 0;
-    byte channel_last_volumes[16];
-    byte magic[4];
-
-    // Initialize volumes.
-    for( int i = 0; i < 16; i++ ) {
-        channel_last_volumes[i] = 0;
+    // Search for an empty MusicBuffer
+    for( d_int i = 0; i < MAX_MUSIC_BUFFERS; i++ ) {
+        if( music_buffers[ i ].mus_data == NULL ) {
+            handle = i;
+            i = MAX_MUSIC_BUFFERS;
+        }
     }
+
+    // Out of space
+    if( handle == -1 )
+        return handle;
+
+    byte magic[4];
+    void* data_head = data;
 
     magic[0] = *(byte*)(data_head++);
     magic[1] = *(byte*)(data_head++);
     magic[2] = *(byte*)(data_head++);
     magic[3] = *(byte*)(data_head++);
 
-    song_length = SHORT( *(d_ushort*)data_head );
-    data_head += sizeof(d_ushort);
-    song_offset = SHORT( *(d_ushort*)data_head );
-    data_head += sizeof(d_ushort);
-    primary_channel_amount = SHORT( *(d_ushort*)data_head );
-    data_head += sizeof(d_ushort);
-    second_channel_amount = SHORT( *(d_ushort*)data_head );
-    data_head += sizeof(d_ushort);
-    instrument_amount = SHORT( *(d_ushort*)data_head );
+    if( magic[0] != 'M' || magic[1] != 'U' || magic[2] != 'S' || magic[3] != 0x1a )
+        return -1;
+
+    music_buffers[handle].mus_data = data;
+    music_buffers[handle].mus_data_end = (byte*)data + SHORT( *(d_ushort*)data_head );
     data_head += sizeof(d_ushort);
 
-    printf( "I_RegisterSong\n"
-        "   Magic %c%c%c, 0x%x,\n"
-        "   Length bytes %d,\n"
-        "   Offset 0x%x,\n"
-        "   Primary Channel Amount %d,\n"
-        "   Secondary Channel Amount %d,\n"
-        "   Instrument Amount %d\n",
-        magic[0], magic[1], magic[2], magic[3], song_length, song_offset,
-        primary_channel_amount, second_channel_amount, instrument_amount );
+    music_buffers[handle].mus_event_begin = (byte*)data + SHORT( *(d_ushort*)data_head );
+    music_buffers[handle].mus_event_head = music_buffers[handle].mus_event_begin;
+    data_head += sizeof(d_ushort);
 
-    // Event variables.
-    d_short midi_event      = 0;
-    d_short midi_channel    = 0;
-    byte    midi_parameter1 = 0;
-    byte    midi_parameter2 = 0;
+    printf( "data %p\nbegin %p\nhead %p\n", data, music_buffers[handle].mus_event_begin, music_buffers[handle].mus_event_head);
 
-    short *midi_buffer = malloc( 1 );
-    size_t midi_buffer_length = 0;
+    // primary_channel_amount = SHORT( *(d_ushort*)data_head );
+    // data_head += sizeof(d_ushort);
+    // second_channel_amount = SHORT( *(d_ushort*)data_head );
+    // data_head += sizeof(d_ushort);
+    // instrument_amount = SHORT( *(d_ushort*)data_head );
+    // data_head += sizeof(d_ushort);
 
-    for( d_int i = 0; i < song_length; ) {
-        byte info = *(byte*)(data + song_offset + i);
-
-        bool   last    = (info & 0x80) != 0;
-        d_uint type    = (info & 0x70) >> 4;
-        d_uint channel = (info & 0x0F);
-
-        midi_channel = channel;
-
-        // Info has been read.
-        i++;
-
-        //printf( "type = %i; channel = %i; ", type, channel );
-
-        switch( type ) {
-            case 0: // Release Note
-                {
-                    d_uint note_number = *(byte*)(data + song_offset + i) & 0x7F;
-                    i++;
-
-                    tsf_channel_note_off(sound_font, midi_channel, note_number);
-                }
-                break;
-            case 1: // Play Note
-                {
-                    byte             note = *(byte*)(data + song_offset + i);
-                    boolean volume_enable = note & 0x80;
-                    byte      note_number = note & 0x7F;
-                    i++;
-
-                    byte volume;
-
-                    if( volume_enable ) {
-                        volume = *(byte*)(data + song_offset + i) & 0x7F;
-                        channel_last_volumes[channel] = volume;
-                        //printf( "set volume;" );
-                        i++;
-                    }
-                    else
-                        volume = channel_last_volumes[channel];
-
-                    tsf_channel_note_on(sound_font, midi_channel, note_number, volume * (1./127.));
-                }
-                break;
-            case 2: // Pitch Bend
-                {
-                    byte pitch_bend = *(byte*)(data + song_offset + i);
-                    i++;
-
-                    tsf_channel_set_pitchwheel(sound_font, midi_channel, pitch_bend * 0x40);
-                }
-                break;
-            case 3: // System Event
-                {
-                    byte controller = *(byte*)(data + song_offset + i) & 0x7F;
-                    i++;
-
-                    tsf_channel_midi_control(sound_font, midi_channel, mus_to_midi[controller % MUS_TABLE_LIMIT], 0);
-                }
-                break;
-            case 4: // Controller
-                {
-                    byte controller = *(byte*)(data + song_offset + i) & 0x7F;
-                    i++;
-                    byte value = *(byte*)(data + song_offset + i) & 0x7F;
-                    i++;
-                    //printf( "controller = %i; value = %i;\n", controller, value );
-
-                    if( controller == 0 ) {
-                        tsf_channel_set_presetnumber(sound_font, midi_channel, value, (midi_channel == 9));
-                    }
-                    else {
-                        tsf_channel_midi_control(sound_font, midi_channel, mus_to_midi[controller % MUS_TABLE_LIMIT], value);
-                    }
-                }
-                break;
-            default:
-                printf( "command not recognized at 0x%x;\n", i );
-            case 5:
-            case 6:
-                break;
-        }
-
-        d_ulong delay_amount = 0;
-
-        while( last ) {
-            last = (*(byte*)(data + song_offset + i) & 0x80) != 0;
-            delay_amount = delay_amount * 128 + (*(byte*)(data + song_offset + i) & 0x7F);
-            i++;
-        }
-
-        if( delay_amount != 0 ) {
-            size_t size = (MIDI_SAMPLE_RATE * delay_amount) / MUS_DELAY_RATE;
-
-            midi_buffer = realloc(midi_buffer, 2 * sizeof(short) * (midi_buffer_length + size));
-            tsf_render_short(sound_font, midi_buffer + midi_buffer_length, size, 0);
-
-            midi_buffer_length += 2 * size;
-        }
+    for( unsigned int c = 0; c < MUS_CHANNEL_AMOUNT; c++ ) {
+        music_buffers[handle].channel_volume[c] = 100;
     }
+    music_buffers[handle].looping = false;
+    music_buffers[handle].paused  = true;
+    music_buffers[handle].reset   = false;
+    music_buffers[handle].delay_amount = 0;
 
-    free( midi_buffer );
-
-    return 1;
+    return handle;
 }
 
 // Is the song playing?
