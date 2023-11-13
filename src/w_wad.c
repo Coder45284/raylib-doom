@@ -22,8 +22,8 @@
 //-----------------------------------------------------------------------------
 
 #include <string.h>
-#include <malloc.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <assert.h>
 
 #include "doomtype.h"
