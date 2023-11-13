@@ -184,13 +184,6 @@ extern d_int	showMessages;
 // machine-independent sound params
 extern	d_int	numChannels;
 
-
-// UNIX hack, to be removed.
-#ifdef SNDSERV
-extern d_char*	sndserver_filename;
-extern d_int	mb_used;
-#endif
-
 extern d_char*	chat_macros[];
 
 
