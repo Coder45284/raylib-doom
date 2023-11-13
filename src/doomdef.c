@@ -31,15 +31,17 @@ const char GAMEMODES[ 5 ][ 13 ] = { {"SHAREWARE"}, {"REGISTERED"}, {"COMMERCIAL"
 
 boolean D_StrCaseEqual( const d_char *const left, const d_char *const right ) {
     size_t length_left = strlen( left );
-    size_t length_right = strlen( right );
 
-    if( length_left != length_right )
+    if( length_left != strlen( right ) )
         return false;
 
-    for( size_t i = 0; left[i] != '\0'; i++)
+    return D_StrNCaseEqual( left, right, length_left );
+}
+
+boolean D_StrNCaseEqual( const d_char *const left, const d_char *const right, size_t n ) {
+    for( size_t i = 0; left[i] != '\0' && i < n; i++)
         if( toupper(left[i]) != toupper(right[i]) )
             return false;
 
     return true;
 }
-

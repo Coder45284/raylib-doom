@@ -271,6 +271,7 @@ typedef enum
 #define D_KEY_LALT        D_KEY_RALT
 
 boolean D_StrCaseEqual( const d_char *const left, const d_char *const right );
+boolean D_StrNCaseEqual( const d_char *const left, const d_char *const right, size_t n );
 
 // DOOM basic types (boolean),
 //  and max/min values.

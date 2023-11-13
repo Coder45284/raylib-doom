@@ -41,8 +41,6 @@
 
 #include  <alloca.h>
 
-#include <strings.h>
-
 //
 // Graphics.
 // DOOM graphics for walls and sprites
@@ -690,7 +688,7 @@ d_int	R_CheckTextureNumForName (d_char *name)
         return 0;
 
     for (i=0 ; i<numtextures ; i++)
-        if (!strncasecmp (textures[i]->name, name, 8) )
+        if( D_StrNCaseEqual(textures[i]->name, name, 8) )
             return i;
 
     return -1;
