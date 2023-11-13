@@ -25,11 +25,21 @@
 #include "doomtype.h"
 
 #include "doomdef.h"
+#include <ctype.h>
 
 const char GAMEMODES[ 5 ][ 13 ] = { {"SHAREWARE"}, {"REGISTERED"}, {"COMMERCIAL"}, {"RETAIL"}, {"INDETERMINED"} };
 
-// Location for any defines turned variables.
+boolean D_StrCaseEqual( const d_char *const left, const d_char *const right ) {
+    size_t length_left = strlen( left );
+    size_t length_right = strlen( right );
 
-// None.
+    if( length_left != length_right )
+        return false;
 
+    for( size_t i = 0; left[i] != '\0'; i++)
+        if( toupper(left[i]) != toupper(right[i]) )
+            return false;
+
+    return true;
+}
 

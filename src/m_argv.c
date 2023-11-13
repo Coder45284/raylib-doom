@@ -20,9 +20,9 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "doomtype.h"
+#include "m_argv.h"
+#include "doomdef.h"
 
-#include <strings.h>
 #include <string.h>
 
 d_int     myargc;
@@ -40,8 +40,8 @@ d_int M_CheckParm (d_char *check)
 
     for (i = 1;i<myargc;i++)
     {
-	if ( !strcasecmp(check, myargv[i]) )
-	    return i;
+        if ( D_StrCaseEqual(check, myargv[i]) )
+            return i;
     }
 
     return 0;

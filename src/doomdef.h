@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "doomtype.h"
 
 //
 // Global parameters/defines.
@@ -280,7 +281,7 @@ typedef enum
 
 #define D_KEY_LALT        D_KEY_RALT
 
-
+boolean D_StrCaseEqual( const d_char *const left, const d_char *const right );
 
 // DOOM basic types (boolean),
 //  and max/min values.

@@ -27,6 +27,7 @@
 #include <assert.h>
 
 #include "doomtype.h"
+#include "doomdef.h"
 #include "m_swap.h"
 #include "i_system.h"
 #include "z_zone.h"
@@ -48,53 +49,32 @@ static d_int number_of_handles = 0;
 
 void**			lumpcache;
 
-boolean str_case_equal( const d_char *const left, const d_char *const right ) {
-    size_t length_left = strlen( left );
-    size_t length_right = strlen( right );
-
-    if( length_left != length_right )
-        return false;
-
-    for( size_t i = 0; left[i] != '\0'; i++)
-        if( toupper(left[i]) != toupper(right[i]) )
-            return false;
-
-    return true;
-}
-
-void strupr (char* s)
+void ExtractFileBase( d_char* path, d_char* dest )
 {
-    while (*s) { *s = toupper(*s); s++; }
-}
-
-void
-ExtractFileBase
-( d_char*		path,
-  d_char*		dest )
-{
-    d_char*	src;
-    d_int		length;
+    d_char* src;
+    d_int   length;
 
     src = path + strlen(path) - 1;
     
     // back up until a \ or the start
-    while (src != path
-	   && *(src-1) != '\\'
-	   && *(src-1) != '/')
+    while(
+        src != path &&
+        *(src-1) != '\\' &&
+        *(src-1) != '/')
     {
-	src--;
+        src--;
     }
-    
+
     // copy up to eight characters
     memset (dest,0,8);
     length = 0;
     
     while (*src && *src != '.')
     {
-	if (++length == 9)
-	    I_Error ("Filename base of %s >8 chars",path);
+        if (++length == 9)
+            I_Error ("Filename base of %s >8 chars",path);
 
-	*dest++ = toupper((d_int)*src++);
+        *dest++ = toupper((d_int)*src++);
     }
 }
 
@@ -158,7 +138,7 @@ void W_AddFile (d_char *filename)
     printf (" adding %s\n",filename);
     startlump = numlumps;
 
-    if( !str_case_equal( GetFileExtension(filename) + 1, "wad" ) )
+    if( !D_StrCaseEqual( GetFileExtension(filename) + 1, "wad" ) )
     {
         // single lump file
         fileinfo = &singleinfo;
