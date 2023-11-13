@@ -39,7 +39,7 @@
 
 #include "r_data.h"
 
-#include  <alloca.h>
+#include <stdlib.h>
 
 //
 // Graphics.
@@ -285,7 +285,7 @@ void R_GenerateLookup (d_int texnum)
 {
     texture_t*		texture;
     byte*		patchcount;	// patchcount[texture->width]
-    texpatch_t*		patch;	
+    texpatch_t*		patch;
     patch_t*		realpatch;
     d_int			x;
     d_int			x1;
@@ -293,7 +293,7 @@ void R_GenerateLookup (d_int texnum)
     d_int			i;
     d_short*		collump;
     d_ushort*	colofs;
-	
+
     texture = textures[texnum];
 
     // Composited texture not created yet.
@@ -307,58 +307,60 @@ void R_GenerateLookup (d_int texnum)
     //  that are covered by more than one patch.
     // Fill in the lump / offset, so columns
     //  with only a single patch are all done.
-    patchcount = (byte *)alloca (texture->width);
-    memset (patchcount, 0, texture->width);
+    patchcount = (byte *)calloc( texture->width, sizeof(*patchcount) );
     patch = texture->patches;
-		
-    for (i=0 , patch = texture->patches;
-	 i<texture->patchcount;
-	 i++, patch++)
-    {
-	realpatch = W_CacheLumpNum (patch->patch, PU_CACHE);
-	x1 = patch->originx;
-	x2 = x1 + SHORT(realpatch->width);
-	
-	if (x1 < 0)
-	    x = 0;
-	else
-	    x = x1;
 
-	if (x2 > texture->width)
-	    x2 = texture->width;
-	for ( ; x<x2 ; x++)
-	{
-	    patchcount[x]++;
-	    collump[x] = patch->patch;
-	    colofs[x] = LONG(realpatch->columnofs[x-x1])+3;
-	}
+    for (i=0 , patch = texture->patches;
+         i<texture->patchcount;
+    i++, patch++)
+    {
+        realpatch = W_CacheLumpNum (patch->patch, PU_CACHE);
+        x1 = patch->originx;
+        x2 = x1 + SHORT(realpatch->width);
+
+        if (x1 < 0)
+            x = 0;
+        else
+            x = x1;
+
+        if (x2 > texture->width)
+            x2 = texture->width;
+        for ( ; x<x2 ; x++)
+        {
+            patchcount[x]++;
+            collump[x] = patch->patch;
+            colofs[x] = LONG(realpatch->columnofs[x-x1])+3;
+        }
     }
-	
+
     for (x=0 ; x<texture->width ; x++)
     {
-	if (!patchcount[x])
-	{
-	    printf ("R_GenerateLookup: column without a patch (%s)\n",
-		    texture->name);
-	    return;
-	}
-	// I_Error ("R_GenerateLookup: column without a patch");
-	
-	if (patchcount[x] > 1)
-	{
-	    // Use the cached block.
-	    collump[x] = -1;	
-	    colofs[x] = texturecompositesize[texnum];
-	    
-	    if (texturecompositesize[texnum] > 0x10000-texture->height)
-	    {
-		I_Error ("R_GenerateLookup: texture %i is >64k",
-			 texnum);
-	    }
-	    
-	    texturecompositesize[texnum] += texture->height;
-	}
-    }	
+        if (!patchcount[x])
+        {
+            printf ("R_GenerateLookup: column without a patch (%s)\n",
+                    texture->name);
+            free( patchcount );
+            return;
+        }
+        // I_Error ("R_GenerateLookup: column without a patch");
+
+        if (patchcount[x] > 1)
+        {
+            // Use the cached block.
+            collump[x] = -1;
+            colofs[x] = texturecompositesize[texnum];
+
+            if (texturecompositesize[texnum] > 0x10000-texture->height)
+            {
+                free( patchcount );
+                I_Error ("R_GenerateLookup: texture %i is >64k",
+                        texnum);
+            }
+
+            texturecompositesize[texnum] += texture->height;
+        }
+    }
+    free( patchcount );
 }
 
 
@@ -431,8 +433,8 @@ void R_InitTextures (void)
     names = W_CacheLumpName ("PNAMES", PU_STATIC);
     nummappatches = LONG ( *((d_int *)names) );
 
-    name_p = names+4;
-    patchlookup = alloca( nummappatches * sizeof(*patchlookup) );
+    name_p = names + 4 * sizeof(*name_p);
+    patchlookup = malloc( nummappatches * sizeof(*patchlookup) );
     
     for (i=0 ; i<nummappatches ; i++)
     {
@@ -557,6 +559,8 @@ void R_InitTextures (void)
     
     for (i=0 ; i<numtextures ; i++)
         texturetranslation[i] = i;
+
+    free( patchlookup );
 }
 
 
@@ -744,8 +748,7 @@ void R_PrecacheLevel (void)
         return;
     
     // Precache flats.
-    flatpresent = alloca(numflats);
-    memset (flatpresent,0,numflats);	
+    flatpresent = calloc(numflats, sizeof(d_char));
 
     for (i=0 ; i<numsectors ; i++)
     {
@@ -766,8 +769,7 @@ void R_PrecacheLevel (void)
     }
     
     // Precache textures.
-    texturepresent = alloca(numtextures);
-    memset (texturepresent,0, numtextures);
+    texturepresent = calloc(numtextures, sizeof(d_char));
 	
     for (i=0 ; i<numsides ; i++)
     {
@@ -801,16 +803,16 @@ void R_PrecacheLevel (void)
     }
     
     // Precache sprites.
-    spritepresent = alloca(numsprites);
-    memset (spritepresent,0, numsprites);
-	
+    spritepresent = calloc(numsprites, sizeof(d_char));
+
     for (th = thinkercap.next ; th != &thinkercap ; th=th->next)
     {
         if (th->function.acp1 == (actionf_p1)P_MobjThinker)
             spritepresent[((mobj_t *)th)->sprite] = 1;
     }
-	
+
     spritememory = 0;
+
     for (i=0 ; i<numsprites ; i++)
     {
         if (!spritepresent[i])
@@ -821,12 +823,16 @@ void R_PrecacheLevel (void)
             sf = &sprites[i].spriteframes[j];
             for (k=0 ; k<8 ; k++)
             {
-            lump = firstspritelump + sf->lump[k];
-            spritememory += lumpinfo[lump].size;
-            W_CacheLumpNum(lump , PU_CACHE);
+                lump = firstspritelump + sf->lump[k];
+                spritememory += lumpinfo[lump].size;
+                W_CacheLumpNum(lump , PU_CACHE);
             }
         }
     }
+
+    free( flatpresent );
+    free( texturepresent );
+    free( spritepresent );
 }
 
 
