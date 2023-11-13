@@ -25,11 +25,6 @@
 
 #include "doomtype.h"
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
-
 //
 // Fixed point, 32bit as 16.16.
 //

@@ -21,17 +21,12 @@
 //-----------------------------------------------------------------------------
 
 #include "doomtype.h"
-static const d_char rcsid[] = "$Id: m_argv.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
-
 
 #include <strings.h>
 #include <string.h>
 
 d_int     myargc;
 d_char**  myargv;
-
-
-
 
 //
 // M_CheckParm
