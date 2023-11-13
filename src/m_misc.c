@@ -206,12 +206,12 @@ default_t	defaults[] =
     
     {"key_right",&key_right, D_KEY_RIGHTARROW},
     {"key_left",&key_left, D_KEY_LEFTARROW},
-    {"key_up",&key_up, D_KEY_UPARROW},
-    {"key_down",&key_down, D_KEY_DOWNARROW},
-    {"key_strafeleft",&key_strafeleft, ','},
-    {"key_straferight",&key_straferight, '.'},
+    {"key_up",&key_up, 'w'},
+    {"key_down",&key_down, 's'},
+    {"key_strafeleft",&key_strafeleft, 'a'},
+    {"key_straferight",&key_straferight, 'd'},
 
-    {"key_fire",&key_fire, D_KEY_RCTRL},
+    {"key_fire",&key_fire, 'e'},
     {"key_use",&key_use, ' '},
     {"key_strafe",&key_strafe, D_KEY_RALT},
     {"key_speed",&key_speed, D_KEY_RSHIFT},
