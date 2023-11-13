@@ -54,7 +54,7 @@ Sound sfx_audios[NUMSFX];
 d_uint sfx_audio_amount = 0;
 Sound* sfx_audio_table[NUMSFX];
 
-void* getsfx( d_char* sfxname, Sound* sfxsound ) {
+static void* getsfx( d_char* sfxname, Sound* sfxsound ) {
     byte*  sfx;
     d_int  sfxlump;
     d_int  size;
@@ -91,21 +91,10 @@ void I_SetChannels()
 {
 }
 
- 
 void I_SetSfxVolume(d_uint volume)
 {
     snd_SfxVolume = volume;
 }
-
-// MUSIC API - dummy. Some code from DOS version.
-void I_SetMusicVolume(d_uint volume)
-{
-    // Internal state variable.
-    snd_MusicVolume = volume;
-    // Now set volume on output device.
-    // Whatever( snd_MusciVolume );
-}
-
 
 //
 // Retrieve the raw data lump index
@@ -408,6 +397,21 @@ void MidiInputCallback(void* buffer, unsigned int frames )
 //
 // MUSIC API.
 //
+void I_SetMusicVolume(d_uint volume)
+{
+    // 15 is the max volume. I do not want to blow ears up.
+    if( volume > 15)
+        volume = 15;
+
+    // Internal state variable.
+    snd_MusicVolume = volume;
+
+    // Now set volume on output device.
+    // Whatever( snd_MusciVolume );
+    if( sound_font != NULL )
+        SetAudioStreamVolume( mus_stream, volume * (1./15.) );
+}
+
 void I_InitMusic(void)
 {
     for( int i = 0; i < MAX_MUSIC_BUFFERS; i++ ) {
@@ -426,6 +430,8 @@ void I_InitMusic(void)
         mus_stream = LoadAudioStream( MIDI_SAMPLE_RATE, 16, MIDI_CHANNELS );
 
         SetAudioStreamCallback( mus_stream, MidiInputCallback );
+
+        I_SetMusicVolume(snd_MusicVolume);
     }
 }
 
