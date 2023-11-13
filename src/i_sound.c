@@ -219,7 +219,6 @@ static AudioStream mus_stream;
 
 #define MIDI_SAMPLE_RATE 44100
 #define MIDI_CHANNELS    2
-#define MIDI_BUFFER_SIZE (size_t)(8192 * MIDI_CHANNELS * sizeof(short))
 
 #if MIDI_CHANNELS == 1
 #define MIDI_TSF_OPTIONS TSF_MONO
@@ -420,30 +419,29 @@ void I_InitMusic(void)
     sound_font = tsf_load_filename(soundfont_filepath);
 
     if( sound_font == NULL )
-        printf( "Soundfont \"%s\" not found! No music playback!\n", soundfont_filepath);
+        printf( "I_InitMusic: Soundfont \"%s\" not found! No music playback!\n", soundfont_filepath);
+    else {
+        tsf_set_output(sound_font, MIDI_TSF_OPTIONS, MIDI_SAMPLE_RATE, 0);
 
-    tsf_set_output(sound_font, MIDI_TSF_OPTIONS, MIDI_SAMPLE_RATE, 0);
+        mus_stream = LoadAudioStream( MIDI_SAMPLE_RATE, 16, MIDI_CHANNELS );
 
-    SetAudioStreamBufferSizeDefault(MIDI_BUFFER_SIZE);
-
-    mus_stream = LoadAudioStream( MIDI_SAMPLE_RATE, 16, MIDI_CHANNELS );
-
-    SetAudioStreamCallback( mus_stream, MidiInputCallback );
-
-    PlayAudioStream( mus_stream );
+        SetAudioStreamCallback( mus_stream, MidiInputCallback );
+    }
 }
 
 void I_ShutdownMusic(void)
 {
     if( sound_font != NULL )
+    {
+        UnloadAudioStream( mus_stream );
         tsf_close( sound_font );
-
+    }
     sound_font = NULL;
 }
 
 void I_PlaySong(d_int handle, d_int looping)
 {
-    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+    if( sound_font == NULL || handle >= MAX_MUSIC_BUFFERS || handle < 0 )
         return;
 
     music_buffers[handle].looping = looping;
@@ -456,27 +454,35 @@ void I_PlaySong(d_int handle, d_int looping)
     music_buffers[ current_mus_handle ].mus_event_head = music_buffers[ current_mus_handle ].mus_event_begin;
 
     tsf_reset( sound_font );
+
+    PlayAudioStream( mus_stream );
 }
 
 void I_PauseSong (d_int handle)
 {
-    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+    if( sound_font == NULL || handle >= MAX_MUSIC_BUFFERS || handle < 0 )
         return;
 
     music_buffers[handle].paused = true;
+
+    if( handle == current_mus_handle )
+        PauseAudioStream( mus_stream );
 }
 
 void I_ResumeSong (d_int handle)
 {
-    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+    if( sound_font == NULL || handle >= MAX_MUSIC_BUFFERS || handle < 0 )
         return;
 
     music_buffers[handle].paused = false;
+
+    if( handle == current_mus_handle )
+        ResumeAudioStream( mus_stream );
 }
 
 void I_StopSong(d_int handle)
 {
-    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+    if( sound_font == NULL || handle >= MAX_MUSIC_BUFFERS || handle < 0 )
         return;
 
     music_buffers[ handle ].paused = true;
@@ -492,7 +498,7 @@ void I_StopSong(d_int handle)
 
 void I_UnRegisterSong(d_int handle)
 {
-    if( handle >= MAX_MUSIC_BUFFERS || handle < 0 )
+    if( sound_font == NULL || handle >= MAX_MUSIC_BUFFERS || handle < 0 )
         return;
 
     music_buffers[ handle ].mus_data = NULL;
@@ -501,6 +507,9 @@ void I_UnRegisterSong(d_int handle)
 d_int I_RegisterSong(void* data)
 {
     d_int handle = -1;
+
+    if( sound_font == NULL )
+        return handle;
 
     // Search for an empty MusicBuffer
     for( d_int i = 0; i < MAX_MUSIC_BUFFERS; i++ ) {
@@ -553,7 +562,8 @@ d_int I_RegisterSong(void* data)
 // Is the song playing?
 d_int I_QrySongPlaying(d_int handle)
 {
-    if( handle != current_mus_handle ||
+    if( sound_font == NULL ||
+        handle != current_mus_handle ||
         handle >= MAX_MUSIC_BUFFERS  ||
         handle < 0 )
         return false; // This handle is out of bounds.
@@ -565,9 +575,6 @@ d_int I_QrySongPlaying(d_int handle)
 // Interrupt handler.
 void I_HandleSoundTimer( d_int ignore )
 {
-    // UNUSED, but required.
-    ignore = 0;
-    return;
 }
 
 // Get the interrupt. Set duration in millisecs.
