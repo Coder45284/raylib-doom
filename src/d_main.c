@@ -143,7 +143,7 @@ d_int   eventtail;
 void D_PostEvent (event_t* ev)
 {
     events[eventhead] = *ev;
-    eventhead = (eventtail + 1) & (MAXEVENTS - 1);
+    eventhead = (eventhead + 1) & (MAXEVENTS - 1);
 }
 
 
