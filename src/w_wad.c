@@ -108,7 +108,6 @@ void W_AddFile (d_char *filename)
     wadinfo_t   header;
     lumpinfo_t* lump_p;
     d_uint      i;
-    d_int       length;
     d_int       startlump;
     filelump_t* fileinfo;
     filelump_t  singleinfo;
@@ -217,7 +216,6 @@ void W_Reload (void)
     wadinfo_t   header;
     lumpinfo_t* lump_p;
     d_uint      i;
-    d_int       length;
     filelump_t* fileinfo;
 
     if (!reloadname)
@@ -237,7 +235,6 @@ void W_Reload (void)
     header.identification[3] = file_data[0]; file_data++;
     header.numlumps     = LONG(*((d_int*)file_data)); file_data += sizeof(d_int);
     header.infotableofs = LONG(*((d_int*)file_data)); file_data += sizeof(d_int);
-    length = header.numlumps * sizeof(filelump_t);
     fileinfo = (filelump_t*)(file_data_begin + header.infotableofs);
     
     // Fill in lumpinfo
@@ -449,23 +446,21 @@ W_CacheLumpNum
 ( d_int		lump,
   d_int		tag )
 {
-    byte*	ptr;
-
     if ((d_uint)lump >= numlumps)
-	I_Error ("W_CacheLumpNum: %i >= numlumps",lump);
-		
+        I_Error ("W_CacheLumpNum: %i >= numlumps",lump);
+
     if (!lumpcache[lump])
     {
-	// read the lump in
-	
-	//printf ("cache miss on lump %i\n",lump);
-	ptr = Z_Malloc (W_LumpLength (lump), tag, &lumpcache[lump]);
-	W_ReadLump (lump, lumpcache[lump]);
+        // read the lump in
+
+        //printf ("cache miss on lump %i\n",lump);
+        Z_Malloc (W_LumpLength (lump), tag, &lumpcache[lump]);
+        W_ReadLump (lump, lumpcache[lump]);
     }
     else
     {
-	//printf ("cache hit on lump %i\n",lump);
-	Z_ChangeTag (lumpcache[lump],tag);
+        //printf ("cache hit on lump %i\n",lump);
+        Z_ChangeTag (lumpcache[lump],tag);
     }
 	
     return lumpcache[lump];

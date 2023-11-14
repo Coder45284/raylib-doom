@@ -176,32 +176,29 @@ lighttable_t	*colormaps;
 //
 void R_DrawColumnInCache ( column_t* patch, byte* cache, d_int originy, d_int cacheheight )
 {
-    d_int		count;
-    d_int		position;
-    byte*	source;
-    byte*	dest;
-	
-    dest = (byte *)cache + 3;
+    d_int count;
+    d_int position;
+    byte* source;
 	
     while (patch->topdelta != 0xff)
     {
-	source = (byte *)patch + 3;
-	count = patch->length;
-	position = originy + patch->topdelta;
+        source = (byte *)patch + 3;
+        count = patch->length;
+        position = originy + patch->topdelta;
 
-	if (position < 0)
-	{
-	    count += position;
-	    position = 0;
-	}
+        if (position < 0)
+        {
+            count += position;
+            position = 0;
+        }
 
-	if (position + count > cacheheight)
-	    count = cacheheight - position;
+        if (position + count > cacheheight)
+            count = cacheheight - position;
 
-	if (count > 0)
-	    memcpy (cache + position, source, count);
-		
-	patch = (column_t *)(  (byte *)patch + patch->length + 4); 
+        if (count > 0)
+            memcpy (cache + position, source, count);
+
+        patch = (column_t *)(  (byte *)patch + patch->length + 4);
     }
 }
 

@@ -983,10 +983,6 @@ void WI_drawDeathmatchStats(void)
     int		x;
     int		y;
     int		w;
-    
-    int		lh;	// line height
-
-    lh = WI_SPACINGY;
 
     WI_slamBackground();
     
@@ -1540,14 +1536,14 @@ void WI_loadData(void)
     anim_t*	a;
 
     if (gamemode == commercial)
-	strcpy(name, "INTERPIC");
+		strncpy(name, "INTERPIC", sizeof(name));
     else 
-	sprintf(name, "WIMAP%d", wbs->epsd);
+		snprintf(name, sizeof(name), "WIMAP%d", wbs->epsd);
     
     if ( gamemode == retail )
     {
-      if (wbs->epsd == 3)
-	strcpy(name,"INTERPIC");
+		if (wbs->epsd == 3)
+			strncpy(name, "INTERPIC", sizeof(name));
     }
 
     // background
@@ -1568,56 +1564,55 @@ void WI_loadData(void)
 
     if (gamemode == commercial)
     {
-	NUMCMAPS = 32;								
-	lnames = (patch_t **) Z_Malloc(sizeof(patch_t*) * NUMCMAPS,
-				       PU_STATIC, 0);
-	for (i=0 ; i<NUMCMAPS ; i++)
-	{								
-	    sprintf(name, "CWILV%2.2d", i);
-	    lnames[i] = W_CacheLumpName(name, PU_STATIC);
-	}					
+		NUMCMAPS = 32;
+		lnames = (patch_t **) Z_Malloc(sizeof(patch_t*) * NUMCMAPS, PU_STATIC, 0);
+		for( i = 0; i < NUMCMAPS; i++ )
+		{
+			snprintf(name, sizeof(name), "CWILV%2.2d", (byte)i);
+			lnames[i] = W_CacheLumpName(name, PU_STATIC);
+		}
     }
     else
     {
-	lnames = (patch_t **) Z_Malloc(sizeof(patch_t*) * NUMMAPS,
-				       PU_STATIC, 0);
-	for (i=0 ; i<NUMMAPS ; i++)
-	{
-	    sprintf(name, "WILV%d%d", wbs->epsd, i);
-	    lnames[i] = W_CacheLumpName(name, PU_STATIC);
-	}
-
-	// you are here
-	yah[0] = W_CacheLumpName("WIURH0", PU_STATIC);
-
-	// you are here (alt.)
-	yah[1] = W_CacheLumpName("WIURH1", PU_STATIC);
-
-	// splat
-	splat = W_CacheLumpName("WISPLAT", PU_STATIC); 
-	
-	if (wbs->epsd < 3)
-	{
-	    for (j=0;j<NUMANIMS[wbs->epsd];j++)
-	    {
-		a = &anims[wbs->epsd][j];
-		for (i=0;i<a->nanims;i++)
+		lnames = (patch_t **) Z_Malloc(sizeof(patch_t*) * NUMMAPS,
+						PU_STATIC, 0);
+		for (i=0 ; i<NUMMAPS ; i++)
 		{
-		    // MONDO HACK!
-		    if (wbs->epsd != 1 || j != 8) 
-		    {
-			// animations
-			sprintf(name, "WIA%d%.2d%.2d", wbs->epsd, j, i);  
-			a->p[i] = W_CacheLumpName(name, PU_STATIC);
-		    }
-		    else
-		    {
-			// HACK ALERT!
-			a->p[i] = anims[1][4].p[i]; 
-		    }
+			snprintf(name, sizeof(name), "WILV%d%d", wbs->epsd, i);
+			lnames[i] = W_CacheLumpName(name, PU_STATIC);
 		}
-	    }
-	}
+
+		// you are here
+		yah[0] = W_CacheLumpName("WIURH0", PU_STATIC);
+
+		// you are here (alt.)
+		yah[1] = W_CacheLumpName("WIURH1", PU_STATIC);
+
+		// splat
+		splat = W_CacheLumpName("WISPLAT", PU_STATIC);
+
+		if (wbs->epsd < 3)
+		{
+			for (j=0;j<NUMANIMS[wbs->epsd];j++)
+			{
+				a = &anims[wbs->epsd][j];
+				for (i=0;i<a->nanims;i++)
+				{
+					// MONDO HACK!
+					if (wbs->epsd != 1 || j != 8)
+					{
+						// animations
+						snprintf(name, sizeof(name), "WIA%d%.2d%.2d", wbs->epsd, j, i);
+						a->p[i] = W_CacheLumpName(name, PU_STATIC);
+					}
+					else
+					{
+						// HACK ALERT!
+						a->p[i] = anims[1][4].p[i];
+					}
+				}
+			}
+		}
     }
 
     // More hacks on minus sign.
