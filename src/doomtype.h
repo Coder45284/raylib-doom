@@ -37,7 +37,7 @@ typedef enum {false, true} boolean;
 typedef uint8_t byte;
 #endif
 
-typedef int8_t   d_char;
+typedef char     d_char;
 typedef int16_t  d_short;
 typedef uint16_t d_ushort;
 typedef int32_t  d_int;
