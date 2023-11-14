@@ -486,8 +486,8 @@ void G_DoLoadLevel (void)
     joyxmove = joyymove = 0; 
     mousex = mousey = 0; 
     sendpause = sendsave = paused = false; 
-    memset (mousebuttons, 0, sizeof(mousebuttons)); 
-    memset (joybuttons, 0, sizeof(joybuttons)); 
+    memset (mousebuttons, 0, sizeof(mousebuttons) * sizeof(*mousebuttons));
+    memset (joybuttons, 0, sizeof(joybuttons) * sizeof(*joybuttons));
 } 
  
  
@@ -753,12 +753,7 @@ void G_Ticker (void)
 // Called by the game initialization functions.
 //
 void G_InitPlayer (d_int player)
-{ 
-    player_t*	p; 
- 
-    // set up the saved info         
-    p = &players[player]; 
-	 
+{
     // clear everything else to defaults 
     G_PlayerReborn (player); 
 	 
@@ -1193,22 +1188,24 @@ void G_LoadGame (d_char* name)
 
 
 void G_DoLoadGame (void) 
-{ 
-    d_int		length;
+{
     d_int		i;
     d_int		a,b,c;
     d_char	vcheck[VERSIONSIZE];
 	 
     gameaction = ga_nothing; 
 	 
-    length = M_ReadFile (savename, &savebuffer); 
+    M_ReadFile (savename, &savebuffer);
     save_p = savebuffer + SAVESTRINGSIZE;
     
     // skip the description field 
-    memset (vcheck,0,sizeof(vcheck)); 
-    sprintf (vcheck,"version %i",VERSION); 
-    if (strcmp (save_p, vcheck)) 
-	return;				// bad version 
+    memset (vcheck,0,sizeof(vcheck));
+
+    snprintf (vcheck, VERSIONSIZE, "version %i", VERSION);
+
+    if( strcmp((d_char*)save_p, vcheck))
+        return;				// bad version
+
     save_p += VERSIONSIZE; 
 			 
     gameskill = *save_p++; 

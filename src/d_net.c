@@ -95,19 +95,7 @@ d_intptr NetbufferSize (void)
 //
 d_uint NetbufferChecksum (void)
 {
-    d_uint		c;
-    d_int		i,l;
-
-    c = 0x1234567;
-
-    // FIXME -endianess?
-    return 0;			// byte order problems
-/*
-    l = (NetbufferSize () - (d_int)&(((doomdata_t *)0)->retransmitfrom))/4;
-    for (i=0 ; i<l ; i++)
-	c += ((d_uint *)&netbuffer->retransmitfrom)[i] * (i+1);
-
-    return c & NCMD_CHECKSUM;*/
+    return 0;
 }
 
 //

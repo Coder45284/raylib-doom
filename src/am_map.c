@@ -291,14 +291,7 @@ static boolean stopped = true;
 extern boolean viewactive;
 //extern byte screens[][SCREENWIDTH*SCREENHEIGHT];
 
-
-
-void
-V_MarkRect
-( d_int	x,
-  d_int	y,
-  d_int	width,
-  d_int	height );
+void V_MarkRect ( d_int x, d_int y, d_int width, d_int height );
 
 // Calculates the slope and slope according to the x-axis of a line
 // segment in map coordinates (with the upright y-axis n' all) so
@@ -615,7 +608,6 @@ AM_Responder
 {
 
     d_int rc;
-    static d_int cheatstate=0;
     static d_int bigstate=0;
     static d_char buffer[20];
 
@@ -694,7 +686,6 @@ AM_Responder
 	    plr->message = AMSTR_MARKSCLEARED;
 	    break;
 	  default:
-	    cheatstate=0;
 	    rc = false;
 	}
 	if (!deathmatch && cht_CheckCheat(&cheat_amap, ev->data1))

@@ -656,38 +656,43 @@ void F_BunnyScroll (void)
 	
     scrolled = 320 - (finalecount-230)/2;
     if (scrolled > 320)
-	scrolled = 320;
+		scrolled = 320;
     if (scrolled < 0)
-	scrolled = 0;
+		scrolled = 0;
 		
     for ( x=0 ; x<SCREENWIDTH ; x++)
     {
-	if (x+scrolled < 320)
-	    F_DrawPatchCol (x, p1, x+scrolled);
-	else
-	    F_DrawPatchCol (x, p2, x+scrolled - 320);		
+		if (x+scrolled < 320)
+			F_DrawPatchCol (x, p1, x+scrolled);
+		else
+			F_DrawPatchCol (x, p2, x+scrolled - 320);
     }
 	
     if (finalecount < 1130)
-	return;
+		return;
     if (finalecount < 1180)
     {
-	V_DrawPatch ((SCREENWIDTH-13*8)/2,
-		     (SCREENHEIGHT-8*8)/2,0, W_CacheLumpName ("END0",PU_CACHE));
-	laststage = 0;
-	return;
+		V_DrawPatch ((SCREENWIDTH-13*8)/2,
+				(SCREENHEIGHT-8*8)/2,0, W_CacheLumpName ("END0",PU_CACHE));
+		laststage = 0;
+		return;
     }
 	
     stage = (finalecount-1180) / 5;
     if (stage > 6)
-	stage = 6;
+		stage = 6;
+
     if (stage > laststage)
     {
-	S_StartSound (NULL, sfx_pistol);
-	laststage = stage;
+		S_StartSound (NULL, sfx_pistol);
+		laststage = stage;
     }
 	
-    sprintf (name,"END%i",stage);
+	if( stage >= 0)
+		snprintf( name, 10, "END%i", stage );
+	else
+		snprintf( name, 10, "BAD END" );
+
     V_DrawPatch ((SCREENWIDTH-13*8)/2, (SCREENHEIGHT-8*8)/2,0, W_CacheLumpName (name,PU_CACHE));
 }
 
