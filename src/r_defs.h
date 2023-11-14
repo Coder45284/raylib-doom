@@ -333,9 +333,9 @@ typedef struct drawseg_s
     
     // Pointers to lists for sprite clipping,
     //  all three adjusted so [x1] is first value.
-    d_ushort*		sprtopclip;
-    d_ushort*		sprbottomclip;
-    d_ushort*		maskedtexturecol;
+    d_short*		sprtopclip;
+    d_short*		sprbottomclip;
+    d_short*		maskedtexturecol;
     
 } drawseg_t;
 
