@@ -529,16 +529,19 @@ d_int I_RegisterSong(void* data)
     if( handle == -1 )
         return handle;
 
-    byte magic[4];
+    byte magic[5];
     void* data_head = data;
 
     magic[0] = *(byte*)(data_head++);
     magic[1] = *(byte*)(data_head++);
     magic[2] = *(byte*)(data_head++);
     magic[3] = *(byte*)(data_head++);
+    magic[4] = '\0';
 
-    if( magic[0] != 'M' || magic[1] != 'U' || magic[2] != 'S' || magic[3] != 0x1a )
+    if( magic[0] != 'M' || magic[1] != 'U' || magic[2] != 'S' || magic[3] != 0x1a ) {
+        printf( "Warning: music format \"%s\" is not recognized! Cannot play music!", magic );
         return -1;
+    }
 
     music_buffers[handle].mus_data = data;
     music_buffers[handle].mus_data_end = (byte*)data + SHORT( *(d_ushort*)data_head );

@@ -101,15 +101,6 @@ void    (*messageRoutine)(d_int response);
 
 #define SAVESTRINGSIZE 	24
 
-d_char gammamsg[5][26] =
-{
-    GAMMALVL0,
-    GAMMALVL1,
-    GAMMALVL2,
-    GAMMALVL3,
-    GAMMALVL4
-};
-
 // we are going to be entering a savegame string
 d_int			saveStringEnter;
 d_int             	saveSlot;	// which slot to save in
@@ -1587,14 +1578,6 @@ boolean M_Responder (event_t* ev)
 	  case D_KEY_F10:           // Quit DOOM
 	    S_StartSound(NULL,sfx_swtchn);
 	    M_QuitDOOM(0);
-	    return true;
-				
-	  case D_KEY_F11:           // gamma toggle
-	    usegamma++;
-	    if (usegamma > 4)
-		usegamma = 0;
-	    players[consoleplayer].message = gammamsg[usegamma];
-	    I_SetPalette (W_CacheLumpName ("PLAYPAL",PU_CACHE));
 	    return true;
 				
 	}

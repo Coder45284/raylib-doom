@@ -232,10 +232,6 @@ default_t	defaults[] =
 
     {"snd_channels",&numChannels, 3},
 
-
-
-    {"usegamma",&usegamma, 0},
-
     {"chatmacro0", (d_int *) &chat_macros[0], (d_intptr) HUSTR_CHATMACRO0 },
     {"chatmacro1", (d_int *) &chat_macros[1], (d_intptr) HUSTR_CHATMACRO1 },
     {"chatmacro2", (d_int *) &chat_macros[2], (d_intptr) HUSTR_CHATMACRO2 },

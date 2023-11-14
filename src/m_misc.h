@@ -23,24 +23,14 @@
 #ifndef __M_MISC__
 #define __M_MISC__
 
-
 #include "doomtype.h"
+
 //
 // MISC
 //
+boolean M_WriteFile ( d_char const* name, void* source, d_int length );
 
-
-
-boolean
-M_WriteFile
-( d_char const*	name,
-  void*		source,
-  d_int		length );
-
-d_int
-M_ReadFile
-( d_char const*	name,
-  byte**	buffer );
+d_int M_ReadFile ( d_char const* name, byte** buffer );
 
 void M_ScreenShot (void);
 
@@ -49,12 +39,7 @@ void M_LoadDefaults (void);
 void M_SaveDefaults (void);
 
 
-d_int
-M_DrawText
-( d_int		x,
-  d_int		y,
-  boolean	direct,
-  d_char*		string );
+d_int M_DrawText ( d_int x, d_int y, boolean direct, d_char* string );
 
 
 #endif
