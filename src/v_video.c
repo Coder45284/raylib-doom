@@ -103,30 +103,24 @@ V_CopyRect
 // V_DrawPatch
 // Masks a column based masked pic to the screen. 
 //
-void
-V_DrawPatch
-( int		x,
-  int		y,
-  int		scrn,
-  patch_t*	patch ) 
-{ 
-
-    int		count;
-    int		col; 
-    column_t*	column; 
-    byte*	desttop;
-    byte*	dest;
-    byte*	source; 
-    int		w; 
+void V_DrawPatch ( int x, int y, int scrn, patch_t* patch )
+{
+    int       count;
+    int       col;
+    column_t* column;
+    byte*     desttop;
+    byte*     dest;
+    byte*     source;
+    int       w;
 	 
     y -= SHORT(patch->topoffset); 
     x -= SHORT(patch->leftoffset); 
 #ifdef RANGECHECK
-    if (x<0
-	||x+SHORT(patch->width) >SCREENWIDTH
-	|| y<0
-	|| y+SHORT(patch->height)>SCREENHEIGHT
-	|| (unsigned)scrn>4)
+    if( x<0 ||
+        x + SHORT(patch->width) > SCREENWIDTH ||
+        y < 0 ||
+        y + SHORT(patch->height) > SCREENHEIGHT ||
+        (unsigned)scrn>4)
     {
       fprintf( stderr, "Patch at %d,%d exceeds LFB\n", x,y );
       // No I_Error abort - what is up with TNT.WAD?
@@ -136,33 +130,32 @@ V_DrawPatch
 #endif
  
     if (!scrn)
-	V_MarkRect (x, y, SHORT(patch->width), SHORT(patch->height)); 
+        V_MarkRect (x, y, SHORT(patch->width), SHORT(patch->height));
 
     col = 0; 
     desttop = screens[scrn]+y*SCREENWIDTH+x; 
-	 
+
     w = SHORT(patch->width); 
 
     for ( ; col<w ; x++, col++, desttop++)
     { 
-	column = (column_t *)((byte *)patch + LONG(patch->columnofs[col])); 
- 
-	// step through the posts in a column 
-	while (column->topdelta != 0xff ) 
-	{ 
-	    source = (byte *)column + 3; 
-	    dest = desttop + column->topdelta*SCREENWIDTH; 
-	    count = column->length; 
-			 
-	    while (count--) 
-	    { 
-		*dest = *source++; 
-		dest += SCREENWIDTH; 
-	    } 
-	    column = (column_t *)(  (byte *)column + column->length 
-				    + 4 ); 
-	} 
-    }			 
+        column = (column_t *)((byte *)patch + LONG(patch->columnofs[col]));
+
+        // step through the posts in a column
+        while (column->topdelta != 0xff )
+        {
+            source = (byte *)column + 3;
+            dest = desttop + column->topdelta*SCREENWIDTH;
+            count = column->length;
+
+            while (count--)
+            {
+                *dest = *source++;
+                dest  += SCREENWIDTH;
+            }
+            column = (column_t *)( (byte *)column + column->length + 4 );
+        }
+    }
 } 
  
 //
