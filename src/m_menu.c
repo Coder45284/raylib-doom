@@ -715,17 +715,18 @@ void M_QuickLoad(void)
 {
     if (netgame)
     {
-	M_StartMessage(QLOADNET,NULL,false);
-	return;
+        M_StartMessage(QLOADNET,NULL,false);
+        return;
     }
-	
+
     if (quickSaveSlot < 0)
     {
-	M_StartMessage(QSAVESPOT,NULL,false);
-	return;
+        M_StartMessage(QSAVESPOT,NULL,false);
+        return;
     }
-    sprintf(tempstring,QLPROMPT,savegamestrings[quickSaveSlot]);
-    M_StartMessage(tempstring,M_QuickLoadResponse,true);
+
+    snprintf(tempstring, sizeof(tempstring), QLPROMPT, savegamestrings[quickSaveSlot]);
+    M_StartMessage(tempstring, M_QuickLoadResponse, true);
 }
 
 
