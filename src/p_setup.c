@@ -606,8 +606,8 @@ P_SetupLevel
 #if 0 // UNUSED
     if (debugfile)
     {
-	Z_FreeTags (PU_LEVEL, D_MAX_INT);
-	Z_FileDumpHeap (debugfile);
+        Z_FreeTags (PU_LEVEL, D_MAX_INT);
+        Z_FileDumpHeap (debugfile);
     }
     else
 #endif
@@ -618,23 +618,23 @@ P_SetupLevel
     P_InitThinkers ();
 
     // if working with a devlopment map, reload it
-    W_Reload ();			
+    W_Reload ();
 	   
     // find map name
     if ( gamemode == commercial)
     {
-	if (map<10)
-	    sprintf (lumpname,"map0%i", map);
-	else
-	    sprintf (lumpname,"map%i", map);
+        if (map<10)
+            snprintf (lumpname, sizeof(lumpname),"map0%i", map);
+        else
+            snprintf (lumpname, sizeof(lumpname),"map%i", map);
     }
     else
     {
-	lumpname[0] = 'E';
-	lumpname[1] = '0' + episode;
-	lumpname[2] = 'M';
-	lumpname[3] = '0' + map;
-	lumpname[4] = 0;
+        lumpname[0] = 'E';
+        lumpname[1] = '0' + episode;
+        lumpname[2] = 'M';
+        lumpname[3] = '0' + map;
+        lumpname[4] = 0;
     }
 
     lumpnum = W_GetNumForName (lumpname);
