@@ -72,7 +72,14 @@ static void* getsfx( d_char* sfxname, Sound* sfxsound ) {
 
     sfx = (byte*)W_CacheLumpNum( sfxlump, PU_STATIC );
 
-    d_ushort header_number  = SHORT( *(d_ushort*)(sfx + 0) );
+    d_ushort header_number = SHORT( *(d_ushort*)(sfx + 0) );
+
+    if( header_number != 3 )
+        I_Error( "%s, Only SFX resources should be loaded. Header number %i invalid.\n", sfxname, header_number );
+
+    if( size < 2 * sizeof(d_short) + sizeof(d_ulong) + 2 * SFX_PADDED_BYTES )
+        I_Error( "%s size is too small to work as a SFX resource.\n", sfxname );
+
     d_ushort sample_rate_hz = SHORT( *(d_ushort*)(sfx + 1 * sizeof(d_short)) );
     d_ulong  padded_samples = LONG(  *(d_ulong*)( sfx + 2 * sizeof(d_short)) );
 
@@ -539,7 +546,7 @@ d_int I_RegisterSong(void* data)
     magic[4] = '\0';
 
     if( magic[0] != 'M' || magic[1] != 'U' || magic[2] != 'S' || magic[3] != 0x1a ) {
-        printf( "Warning: music format \"%s\" is not recognized! Cannot play music!", magic );
+        printf( "Warning: music format \"%s\" is not recognized! The game can not play this music!", magic );
         return -1;
     }
 
